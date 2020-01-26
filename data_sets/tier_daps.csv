@@ -1,0 +1,4 @@
+tier_name,policy_name,policy_param1,policy_param2,policy_param3,...
+SSD,EAG
+NVM,EAG
+RAM,EAG

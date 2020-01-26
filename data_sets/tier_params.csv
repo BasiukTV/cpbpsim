@@ -1,0 +1,4 @@
+name,free_space,CPU_access,type1,SLO1,cost1,type2,SLO2,cost2,type3,SLO3,cost3
+SSD,1000000,False,read,latency,1000,update,latency,1000,copy,latency,1000
+NVM,10000,True,read,latency,20,update,latency,50,copy,latency,50
+RAM,1000,True,read,latency,10,update,latency,10,copy,latency,10
