@@ -19,8 +19,8 @@ OUTPUT:
 
 ## Usage Help
 ```
-$ python3 bp_simulator.py -h
+$ python3 cpbpsim/bp_simulator.py -h
 ```
 
 ## Usage Examples
-[HardBD & Active 2020 Experiment](data_sets/harddb_active_experiments/)
+[HardBD & Active 2020 Experiment](data/harddb_active_experiments/)

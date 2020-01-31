@@ -4,8 +4,8 @@
 
 ### Page Access Sequence Generation Parameters
 ```
-$ python3 page_access_sequence_generator.py \
-    --output ../data_sets/harddb_active_experiments/page_access_sequence.csv \
+$ time python3 cpbpsim/page_access_sequence_generator/page_access_sequence_generator.py \
+    --output data/harddb_active_experiments/page_access_sequence.csv \
     --overwrite \
     --tenants 9 \
     --time 28800 \
@@ -88,17 +88,17 @@ tenantID,type,tiers,tier1,tier2,...,param1,param2,param3,...
 
 ### Simulator Execution Parameters
 ```
-$ time python3 ../../bp_simulator.py \
-    --tier-params tier_params.csv \
-    --tier-daps baseline/tier_daps.csv \
-    --tier-deps baseline/tier_deps.csv \
-    --tenant-slas tenant_slas.csv \
-    --tenant-dmps baseline/tenant_dmps.csv \
-    --pas-file page_access_sequence.csv \
+$ time python3 cpbpsim/bp_simulator.py \
+    --tier-params data/harddb_active_experiments/tier_params.csv \
+    --tier-daps data/harddb_active_experiments/baseline/tier_daps.csv \
+    --tier-deps data/harddb_active_experiments/baseline/tier_deps.csv \
+    --tenant-slas data/harddb_active_experiments/tenant_slas.csv \
+    --tenant-dmps data/harddb_active_experiments/baseline/tenant_dmps.csv \
+    --pas-file data/harddb_active_experiments/page_access_sequence.csv \
     --warmup 3600000 \
-    --log-file baseline/logs/run1.log \
+    --log-file data/harddb_active_experiments/baseline/logs/run1.log \
     --log-level INFO \
-    > baseline/results/result1.csv
+    > data/harddb_active_experiments/baseline/results/result1.csv
 ```
 
 #### Simulation Results
@@ -120,16 +120,16 @@ RAM,LRU
 
 ### Simulator Execution Parameters
 ```
-$ time python3 ../../bp_simulator.py \
-    --tier-params tier_params.csv \
-    --tier-daps lru1/tier_daps.csv \
-    --tier-deps lru1/tier_deps.csv \
-    --tenant-slas tenant_slas.csv \
-    --tenant-dmps lru1/tenant_dmps.csv \
+$ time python3 cpbpsim/bp_simulator.py \
+    --tier-params data/harddb_active_experiments/tier_params.csv \
+    --tier-daps data/harddb_active_experiments/lru1/tier_daps.csv \
+    --tier-deps data/harddb_active_experiments/lru1/tier_deps.csv \
+    --tenant-slas data/harddb_active_experiments/tenant_slas.csv \
+    --tenant-dmps data/harddb_active_experiments/lru1/tenant_dmps.csv \
     --warmup 3600000 \
-    --pas-file page_access_sequence.csv \
-    --log-file lru1/logs/run1.log \
-    > lru1/results/result1.csv
+    --pas-file data/harddb_active_experiments/page_access_sequence.csv \
+    --log-file data/harddb_active_experiments/lru1/logs/run1.log \
+    > data/harddb_active_experiments/lru1/results/result1.csv
 ```
 
 #### Simulation Results
@@ -151,16 +151,16 @@ RAM,LRU
 
 ### Simulator Execution Parameters
 ```
-$ time python3 ../../bp_simulator.py \
-    --tier-params tier_params.csv \
-    --tier-daps lru2/tier_daps.csv \
-    --tier-deps lru2/tier_deps.csv \
-    --tenant-slas tenant_slas.csv \
-    --tenant-dmps lru2/tenant_dmps.csv \
-    --pas-file page_access_sequence.csv \
+$ time python3 cpbpsim/bp_simulator.py \
+    --tier-params data/harddb_active_experiments/tier_params.csv \
+    --tier-daps data/harddb_active_experiments/lru2/tier_daps.csv \
+    --tier-deps data/harddb_active_experiments/lru2/tier_deps.csv \
+    --tenant-slas data/harddb_active_experiments/tenant_slas.csv \
+    --tenant-dmps data/harddb_active_experiments/lru2/tenant_dmps.csv \
+    --pas-file data/harddb_active_experiments/page_access_sequence.csv \
     --warmup 3600000 \
-    --log-file lru2/logs/run1.log \
-    > lru2/results/result1.csv
+    --log-file data/harddb_active_experiments/lru2/logs/run1.log \
+    > data/harddb_active_experiments/lru2/results/result1.csv
 ```
 
 #### Simulation Results
@@ -182,16 +182,16 @@ RAM,NEV
 
 ### Simulator Execution Parameters
 ```
-$ time python3 ../../bp_simulator.py \
-    --tier-params tier_params.csv \
-    --tier-daps lru2-2q/tier_daps.csv \
-    --tier-deps lru2-2q/tier_deps.csv \
-    --tenant-slas tenant_slas.csv \
-    --tenant-dmps lru2-2q/tenant_dmps.csv \
-    --pas-file page_access_sequence.csv \
+$ time python3 cpbpsim/bp_simulator.py \
+    --tier-params data/harddb_active_experiments/tier_params.csv \
+    --tier-daps data/harddb_active_experiments/lru2-2q/tier_daps.csv \
+    --tier-deps data/harddb_active_experiments/lru2-2q/tier_deps.csv \
+    --tenant-slas data/harddb_active_experiments/tenant_slas.csv \
+    --tenant-dmps data/harddb_active_experiments/lru2-2q/tenant_dmps.csv \
+    --pas-file data/harddb_active_experiments/page_access_sequence.csv \
     --warmup 3600000 \
-    --log-file lru2-2q/logs/run1.log \
-    > lru2-2q/results/result1.csv
+    --log-file data/harddb_active_experiments/lru2-2q/logs/run1.log \
+    > data/harddb_active_experiments/lru2-2q/results/result1.csv
 ```
 
 #### Simulation Results
@@ -219,17 +219,17 @@ tenantID,type,tiers,tier1,tier2,...,param1,param2,param3,...
 
 ### Simulator Execution Parameters
 ```
-$ time python3 ../../bp_simulator.py \
-    --tier-params tier_params.csv \
-    --tier-daps lru2-2q-hdmps/tier_daps.csv \
-    --tier-deps lru2-2q-hdmps/tier_deps.csv \
-    --tenant-slas tenant_slas.csv \
-    --tenant-dmps lru2-2q-hdmps/tenant_dmps.csv \
-    --pas-file page_access_sequence.csv \
+$ time python3 cpbpsim/bp_simulator.py \
+    --tier-params data/harddb_active_experiments/tier_params.csv \
+    --tier-daps data/harddb_active_experiments/lru2-2q-hdmps/tier_daps.csv \
+    --tier-deps data/harddb_active_experiments/lru2-2q-hdmps/tier_deps.csv \
+    --tenant-slas data/harddb_active_experiments/tenant_slas.csv \
+    --tenant-dmps data/harddb_active_experiments/lru2-2q-hdmps/tenant_dmps.csv \
+    --pas-file data/harddb_active_experiments/page_access_sequence.csv \
     --warmup 3600000 \
-    --log-file lru2-2q-hdmps/logs/run1.log \
+    --log-file data/harddb_active_experiments/lru2-2q-hdmps/logs/run1.log \
     --log-level INFO \
-    > lru2-2q-hdmps/results/result1.csv
+    > data/harddb_active_experiments/lru2-2q-hdmps/results/result1.csv
 ```
 
 #### Simulation Results

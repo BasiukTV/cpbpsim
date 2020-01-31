@@ -9,7 +9,7 @@ python3 page_access_sequence_generator.py -h
 ## Usage Examples
 ```
 $ python3 page_access_sequence_generator.py \
-    --output ../data_sets/page_access_sequence.csv \
+    --output ../data/page_access_sequence.csv \
     --overwrite \
     --tenants 8 \
     --time 3600 \
@@ -30,9 +30,9 @@ For tenant #6, generating 14400 samples with Pareto (alpha=2) distribution for 6
 For tenant #7, generating 28800 samples with uniform distribution for 700 pages and 0.7 fraction of reads.
 For tenant #8, generating 28800 samples with normal (sigma=160) distribution for 800 pages and 0.8 fraction of reads.
 Sorting samples according to their timestamps.
-Writing out sorted samples to the file: ../data_sets/new_page_access_sequence.dat
+Writing out sorted samples to the file: ../data/new_page_access_sequence.dat
 Done. Exiting!
 ```
 
 ## Generated File Example
-[Example](../data_sets/new_page_access_sequence.csv)
+[Example](../data/new_page_access_sequence.csv)

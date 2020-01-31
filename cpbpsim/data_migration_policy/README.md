@@ -28,8 +28,8 @@ $ python3 data_migration_policy.py \
     --eviction-matrix 1.0 0.0 0.0 0.9 0.0 0.1 0.5 0.5 0.0 \
     --admission-evaluations SSD 1000 NVM 1000 RAM 1000 \
     --eviction-evaluations SSD 1000 NVM 1000 RAM 1000 \
-    > ../data_sets/new_data_migration_policy_evaluation_example.csv
+    > ../data/new_data_migration_policy_evaluation_example.csv
 ```
 
 ## Generated File Example
-[Example](../data_sets/data_migration_policy_evaluation_example.csv)
+[Example](../data/data_migration_policy_evaluation_example.csv)
