@@ -24,3 +24,8 @@ $ python3 cpbpsim/bp_simulator.py -h
 
 ## Usage Examples
 [HardBD & Active 2020 Experiment](data/harddb_active_experiments/)
+
+## Install As A Package
+```
+$ pip3 install git+https://github.com/BasiukTV/cpbpsim.git
+```
