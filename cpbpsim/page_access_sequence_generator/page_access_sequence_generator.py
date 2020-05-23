@@ -7,6 +7,7 @@ if __name__ == "__main__":
 
     DEFAULT_TENANTS = 5
     DEFAULT_DURATION = 1800
+    DEFAULT_TIME_OFFSET = 0
     DEFAULT_ACESS_RATE = 1.0
     DEFAULT_ACESS_DISTRIBUTION = "NOR_20"
     DEFAULT_DATA_SIZE = 100
@@ -31,12 +32,14 @@ if __name__ == "__main__":
     parser.add_argument('-O', '--output', type=str, default=DEFAULT_OUTPUT_FILE,
         help='Output file name. Default: {}'.format(DEFAULT_OUTPUT_FILE))
     parser.add_argument('--overwrite', action='store_const', const=True, default=DEFAULT_OUTPUT_FILE_OVERWRITE,
-        help='Allows for the output file overwrite. Default: {}'.format(DEFAULT_OUTPUT_FILE_OVERWRITE))
+        help='Allows for the output file overwrite. If False, appends to the end of the file (if exists). Default: {}'.format(DEFAULT_OUTPUT_FILE_OVERWRITE))
 
     parser.add_argument('-N', '--tenants', type=int, default=DEFAULT_TENANTS,
         help='Number of tenants causing page accesses. Default: {}'.format(DEFAULT_TENANTS))
     parser.add_argument('-T', '--time', type=int, default=DEFAULT_DURATION,
         help='Time duration of the generated sequence (in seconds). Default: {}'.format(DEFAULT_DURATION))
+    parser.add_argument('--time-offset', type=int, default=DEFAULT_TIME_OFFSET,
+        help='Time offset of the entries in the generated sequence (in seconds). Default: {}'.format(DEFAULT_TIME_OFFSET))
     parser.add_argument('-R', '--access-rate', type=float, nargs='+', default=[DEFAULT_ACESS_RATE] * DEFAULT_TENANTS,
         help='Page access rate for each tenant (in accesses per second). Default: {} for each tenant.'.format(DEFAULT_ACESS_RATE))
     parser.add_argument('-D', '--access-distribution', type=str, nargs='+', default=[DEFAULT_ACESS_DISTRIBUTION] * DEFAULT_TENANTS,
@@ -74,8 +77,11 @@ if __name__ == "__main__":
 
         if not invalid_access_distribution:
             # Check that the file can be opened
-            with open(args.output, 'w' if args.overwrite else 'x') as output_file:
-                output_file.write("timestamp,pageID,tenantID,access_type\n")
+            with open(args.output, 'w' if args.overwrite else 'a') as output_file:
+
+                # If the file was just created, write out the headers
+                if output_file.tell() == 0:
+                    output_file.write("timestamp,pageID,tenantID,access_type\n")
 
                 import random
 
@@ -121,7 +127,7 @@ if __name__ == "__main__":
                             pageID = first_page_id + int(((rand_var - 1) / 10) * data_size)
 
                         # Generate the timestamps and write versus read using uniform distribution
-                        result.append((int(1000 * args.time * random.random()), pageID, t + 1, 'read' if random.random() <= read_fraction else 'update'))
+                        result.append((1000 * args.time_offset + int(1000 * args.time * random.random()), pageID, t + 1, 'read' if random.random() <= read_fraction else 'update'))
 
                     first_page_id += data_size # Shift the first allowed page in the range for the next tenant
 

@@ -9,10 +9,11 @@ python3 page_access_sequence_generator.py -h
 ## Usage Examples
 ```
 $ python3 page_access_sequence_generator.py \
-    --output ../data/page_access_sequence.csv \
+    --output ../../data/page_access_sequence.csv \
     --overwrite \
     --tenants 8 \
     --time 3600 \
+    --time-offset 0 \
     --access-rate 1 1 2 2 4 4 8 8 \
     --access-distribution UNI PAR_1 UNI NOR_10 UNI PAR_2 UNI NOR_20 \
     --data-size 100 200 300 400 500 600 700 800 \
