@@ -35,5 +35,60 @@ Writing out sorted samples to the file: ../data/new_page_access_sequence.dat
 Done. Exiting!
 ```
 
-## Generated File Example
-[Example](../data/new_page_access_sequence.csv)
+
+## Generating Page Access Sequence with Time Offset
+```
+python3 page_access_sequence_generator.py \
+    --output ../../data/time_offset_page_access_sequence_example.csv \
+    --tenants 8 \
+    --time 900 \
+    --time-offset 0 \
+    --access-rate 2 2 2 2 10 10 10 10 \
+    --access-distribution NOR_10 NOR_10 NOR_10 NOR_10 PAR_2 PAR_2 PAR_2 PAR_2 \
+    --data-size 200 200 200 200 1000 1000 1000 1000 \
+    --read-fraction 0.2 0.2 0.2 0.2 0.1 0.1 0.1 0.1
+
+python3 page_access_sequence_generator.py \
+    --output ../../data/time_offset_page_access_sequence_example.csv \
+    --tenants 8 \
+    --time 900 \
+    --time-offset 900 \
+    --access-rate 2 2 2 4 10 10 10 20 \
+    --access-distribution NOR_10 NOR_10 NOR_10 NOR_10 PAR_2 PAR_2 PAR_2 PAR_2 \
+    --data-size 200 200 200 200 1000 1000 1000 1000 \
+    --read-fraction 0.2 0.2 0.2 0.2 0.1 0.1 0.1 0.1
+
+python3 page_access_sequence_generator.py \
+    --output ../../data/time_offset_page_access_sequence_example.csv \
+    --tenants 8 \
+    --time 900 \
+    --time-offset 1800 \
+    --access-rate 2 2 4 2 10 10 20 10 \
+    --access-distribution NOR_10 NOR_10 NOR_10 NOR_10 PAR_2 PAR_2 PAR_2 PAR_2 \
+    --data-size 200 200 200 200 1000 1000 1000 1000 \
+    --read-fraction 0.2 0.2 0.2 0.2 0.1 0.1 0.1 0.1
+
+python3 page_access_sequence_generator.py \
+    --output ../../data/time_offset_page_access_sequence_example.csv \
+    --tenants 8 \
+    --time 900 \
+    --time-offset 2700 \
+    --access-rate 1 1 2 2 5 5 10 10 \
+    --access-distribution NOR_10 NOR_10 NOR_10 NOR_10 PAR_2 PAR_2 PAR_2 PAR_2 \
+    --data-size 100 100 200 200 500 500 1000 1000 \
+    --read-fraction 0.2 0.2 0.2 0.2 0.1 0.1 0.1 0.1
+
+python3 page_access_sequence_generator.py \
+    --output ../../data/time_offset_page_access_sequence_example.csv \
+    --tenants 8 \
+    --time 900 \
+    --time-offset 3600 \
+    --access-rate 2 2 2 2 10 10 10 10 \
+    --access-distribution NOR_10 NOR_10 NOR_10 NOR_10 PAR_2 PAR_2 PAR_2 PAR_2 \
+    --data-size 200 200 200 200 1000 1000 1000 1000 \
+    --read-fraction 0.2 0.2 0.2 0.2 0.1 0.1 0.1 0.1
+```
+
+## Generated File Examples
+[Simple Example](../../data/new_page_access_sequence.csv)
+[Example with Time Offset](../../data/time_offset_page_access_sequence_example.csv)
