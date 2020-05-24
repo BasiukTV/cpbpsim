@@ -90,5 +90,5 @@ python3 page_access_sequence_generator.py \
 ```
 
 ## Generated File Examples
-[Simple Example](../../data/new_page_access_sequence.csv)
-[Example with Time Offset](../../data/time_offset_page_access_sequence_example.csv)
+* [Simple Example](../../data/page_access_sequence.csv)
+* [Example with Time Offset](../../data/time_offset_page_access_sequence_example.csv)

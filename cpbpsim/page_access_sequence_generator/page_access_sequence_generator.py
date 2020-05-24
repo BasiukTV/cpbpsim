@@ -2,7 +2,7 @@ __author__ = "Taras Basiuk"
 
 if __name__ == "__main__":
 
-    DEFAULT_OUTPUT_FILE = "../data_sets/page_access_sequence.csv"
+    DEFAULT_OUTPUT_FILE = "../../data/page_access_sequence.csv"
     DEFAULT_OUTPUT_FILE_OVERWRITE = False
 
     DEFAULT_TENANTS = 5
