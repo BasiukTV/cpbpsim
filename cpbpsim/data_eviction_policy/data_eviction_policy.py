@@ -8,7 +8,7 @@ class AbstractDataEvictionPolicy(ABC):
     """Abstract class for data eviction policies."""
 
     @abstractmethod
-    def __init__(self, storage_params=None, config_params=None):
+    def __init__(self, storage_params=None, config_params=None, init_from_file=None):
         """Initialize the policy with the given storage tier parameters and policy config parameters."""
         pass
 
@@ -27,10 +27,19 @@ class AbstractDataEvictionPolicy(ABC):
         """Updates the pageID residency with this policy."""
         pass
 
+    @abstractmethod
+    def persist_to_file(self, file_name):
+        """Persists the state of the policy to a file, from which it can be later recovered."""
+        pass
+
 class LRUEvictionPolicy(AbstractDataEvictionPolicy):
     """Implementation of the AbstractDataEvictionPolicy which uses an LRU algorithm."""
 
-    def __init__(self, storage_params=None, config_params=None):
+    def __init__(self, storage_params=None, config_params=None, init_from_file=None):
+
+        if init_from_file:
+            raise NotImplementedError
+
         # Priority queue (heap queue) which will make it easy to find least recently referenced page
         self.priority_queue = []
 
@@ -83,6 +92,9 @@ class LRUEvictionPolicy(AbstractDataEvictionPolicy):
         elif pageID in self.page_residency and not resident:
             self.page_residency.add(pageID)
 
+    def persist_to_file(self, file_name):
+        raise NotImplementedError
+
     def __str__(self):
         return "LRU-EvictionPolicy - Priority Queue: {}, Last Page Reference: {}, Page Residency: {}".format(
             self.priority_queue, self.last_page_reference, self.page_residency)
@@ -93,7 +105,11 @@ class LRUEvictionPolicy(AbstractDataEvictionPolicy):
 class FIFODataEvictionPolicy(AbstractDataEvictionPolicy):
     """Implementation of the AbstractDataEvictionPolicy which uses a FIFO algorithm."""
 
-    def __init__(self, storage_params=None, config_params=None):
+    def __init__(self, storage_params=None, config_params=None, init_from_file=None):
+
+        if init_from_file:
+            raise NotImplementedError
+
         # FIFO queue determining the order of page evictions
         self.fifo_queue = deque()
 
@@ -127,6 +143,9 @@ class FIFODataEvictionPolicy(AbstractDataEvictionPolicy):
         # If the page is resident but should not be, update the residency set
         elif not resident and pageID in self.page_residency:
             self.page_residency.remove(pageID)
+
+    def persist_to_file(self, file_name):
+        raise NotImplementedError
 
     def __str__(self):
         return "FIFO-EvictionPolicy - FIFO Queue: {}, Page Residency: {}".format(self.fifo_queue, self.page_residency)

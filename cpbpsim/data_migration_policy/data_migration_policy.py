@@ -10,7 +10,7 @@ class AbstractDataMigrationPolicy(ABC):
     """
 
     @abstractmethod
-    def __init__(self, config_params=None):
+    def __init__(self, config_params=None, init_from_file=None):
         """Initialize the policy with the given policy config parameters."""
         pass
 
@@ -24,13 +24,22 @@ class AbstractDataMigrationPolicy(ABC):
         """Returns a destination storage tier of the data page when it's evicted from source storage tier."""
         pass
 
+    @abstractmethod
+    def persist_to_file(self, file_name):
+        """Persists the state of the policy to a file, from which it can be later recovered."""
+        pass
+
 class ProbabilityBasedDataMigrationPolicy(AbstractDataMigrationPolicy):
     """
         This data migration policy determines the data page destination according to the preset probabilities
         and a uniform distribution of a random variable
     """
 
-    def __init__(self, config_params):
+    def __init__(self, config_params, init_from_file=None):
+
+        if init_from_file:
+            raise NotImplementedError
+
         # Unpacking expected config_params
         assert "tiers" in config_params, "config_params is expected to contain 'tiers'"
         tiers = config_params["tiers"]
@@ -103,6 +112,9 @@ class ProbabilityBasedDataMigrationPolicy(AbstractDataMigrationPolicy):
                 return self.tiers[i]
 
         return self.tiers[-1]
+
+    def persist_to_file(self, file_name):
+        raise NotImplementedError
 
 if __name__ == "__main__":
 

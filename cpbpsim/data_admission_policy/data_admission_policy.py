@@ -6,7 +6,7 @@ class AbstractDataAdmissionPolicy(ABC):
     """Abstract class for data admission policies."""
 
     @abstractmethod
-    def __init__(self, storage_params=None, config_params=None):
+    def __init__(self, storage_params=None, config_params=None, init_from_file=None):
         """Initialize the policy with the given storage tier parameters and policy config parameters."""
         pass
 
@@ -20,10 +20,15 @@ class AbstractDataAdmissionPolicy(ABC):
         """Returns a decision on whether to admit (promote) given pageID to a different (higher) storage layer."""
         pass
 
+    @abstractmethod
+    def persist_to_file(self, file_name):
+        """Persists the state of the policy to a file, from which it can be later recovered."""
+        pass
+
 class EagerDataAdmissionPolicy(AbstractDataAdmissionPolicy):
     """Implementation of the AbstractDataAdmissionPolicy whose decision is to always admit (promote)."""
 
-    def __init__(self, storage_params=None, config_params=None):
+    def __init__(self, storage_params=None, config_params=None, init_from_file=None):
         pass
 
     def record_access(self, timestamp, pageID, type=None):
@@ -31,6 +36,9 @@ class EagerDataAdmissionPolicy(AbstractDataAdmissionPolicy):
 
     def should_admit(self, pageID):
         return True
+
+    def persist_to_file(self, file_name):
+        pass
 
     def __str__(self):
         return "EagerDataAdmissionPolicy"
@@ -41,7 +49,7 @@ class EagerDataAdmissionPolicy(AbstractDataAdmissionPolicy):
 class NeverDataAdmissionPolicy(AbstractDataAdmissionPolicy):
     """Implementation of the AbstractDataAdmissionPolicy whose decision is to never admit (promote)."""
 
-    def __init__(self, storage_params=None, config_params=None):
+    def __init__(self, storage_params=None, config_params=None, init_from_file=None):
         pass
 
     def record_access(self, timestamp, pageID, type=None):
@@ -49,6 +57,9 @@ class NeverDataAdmissionPolicy(AbstractDataAdmissionPolicy):
 
     def should_admit(self, pageID):
         return False
+
+    def persist_to_file(self, file_name):
+        pass
 
     def __str__(self):
         return "NeverDataAdmissionPolicy"
@@ -59,7 +70,11 @@ class NeverDataAdmissionPolicy(AbstractDataAdmissionPolicy):
 class Q2DataAdmissionPolicy(AbstractDataAdmissionPolicy):
     """Implementation of the AbstractDataAdmissionPolicy based on the 2Q algorithm."""
 
-    def __init__(self, storage_params=None, config_params=None):
+    def __init__(self, storage_params=None, config_params=None, init_from_file=None):
+
+        if init_from_file:
+            raise NotImplementedError
+
         # Initialize the "seen before" set pages
         self.Q1 = set()
 
@@ -75,6 +90,9 @@ class Q2DataAdmissionPolicy(AbstractDataAdmissionPolicy):
 
         # Page was not seen before, should not be admitted
         return False
+
+    def persist_to_file(self, file_name):
+        raise NotImplementedError
 
     def __str__(self):
         return "2QDataAdmissionPolicy - Q1 queue: {}".format(self.Q1)
