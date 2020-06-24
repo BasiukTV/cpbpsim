@@ -73,10 +73,13 @@ class Q2DataAdmissionPolicy(AbstractDataAdmissionPolicy):
     def __init__(self, storage_params=None, config_params=None, init_from_file=None):
 
         if init_from_file:
-            raise NotImplementedError
-
-        # Initialize the "seen before" set pages
-        self.Q1 = set()
+            # If the file is given, populate the "seen before" set with page IDs in it
+            import json
+            with open(init_from_file) as f:
+                self.Q1 = set(json.load(f))
+        else:
+            # Initialize the "seen before" set pages as an empty set
+            self.Q1 = set()
 
     def record_access(self, timestamp, pageID, type):
         # Add the page to the "seen before" set
@@ -92,7 +95,11 @@ class Q2DataAdmissionPolicy(AbstractDataAdmissionPolicy):
         return False
 
     def persist_to_file(self, file_name):
-        raise NotImplementedError
+        """Simply saves the contents of 'seen before' set into the given file in JSON array format. """
+
+        import json
+        with open(file_name, 'w') as f:
+            json.dump(list(self.Q1), f)
 
     def __str__(self):
         return "2QDataAdmissionPolicy - Q1 queue: {}".format(self.Q1)
@@ -103,9 +110,15 @@ class Q2DataAdmissionPolicy(AbstractDataAdmissionPolicy):
 if __name__ == "__main__":
     # Testing Space
     """
-    eager_dap = EagerDataAdmissionPolicy()
-    eager_dap.record_access(0, 1)
-    print(eager_dap)
-    print(eager_dap.should_admit(1))
+    Q2_dap = Q2DataAdmissionPolicy()
+    Q2_dap.record_access(0, 1, "read")
+    print(Q2_dap)
+    print(Q2_dap.should_admit(1))
+    Q2_dap.record_access(1, 2, "read")
+    Q2_dap.record_access(2, 3, "update")
+    Q2_dap.persist_to_file("test.json")
+    Q2_dap = Q2DataAdmissionPolicy(init_from_file="test.json")
+    print(Q2_dap.should_admit(1))
+    print(Q2_dap)
     """
     pass
