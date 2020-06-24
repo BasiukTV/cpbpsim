@@ -38,16 +38,27 @@ class LRUEvictionPolicy(AbstractDataEvictionPolicy):
     def __init__(self, storage_params=None, config_params=None, init_from_file=None):
 
         if init_from_file:
-            raise NotImplementedError
+            # If the file is given, populate the priority_queue, last_page_reference, page_residency from the file.
+            import json
+            with open(init_from_file) as f:
+                persisted_state = json.load(f)
 
-        # Priority queue (heap queue) which will make it easy to find least recently referenced page
-        self.priority_queue = []
+                # When reading in the priority_queue from JSON file convert list of lists into a list of tuples
+                self.priority_queue = list(map(tuple, persisted_state['priority_queue']))
 
-        # Because updating the priority queues items is hard will keep the dictionary to track their true last reference
-        self.last_page_reference = {}
+                # When reading in the last_page_reference convert string to int mapping to int to int mapping
+                self.last_page_reference = dict(map(lambda kv: (int(kv[0]), kv[1]), persisted_state['last_page_reference'].items()))
 
-        # Keep track of the pages actually resident with this policy (subject to eviction)
-        self.page_residency = set()
+                self.page_residency = set(persisted_state['page_residency'])
+        else:
+            # Priority queue (heap queue) which will make it easy to find least recently referenced page
+            self.priority_queue = []
+
+            # Because updating the priority queues items is hard will keep the dictionary to track their true last reference
+            self.last_page_reference = {}
+
+            # Keep track of the pages actually resident with this policy (subject to eviction)
+            self.page_residency = set()
 
     def record_access(self, timestamp, pageID, resident, type=None):
         """Allow the policy to record the pageID access to justify the future eviction decisions."""
@@ -93,7 +104,15 @@ class LRUEvictionPolicy(AbstractDataEvictionPolicy):
             self.page_residency.add(pageID)
 
     def persist_to_file(self, file_name):
-        raise NotImplementedError
+        """We save the contents of the priority_queue, last_page_reference, page_residency to the file."""
+
+        import json
+        with open(file_name, 'w') as f:
+            json.dump({
+                'priority_queue': self.priority_queue,
+                'last_page_reference': self.last_page_reference,
+                'page_residency': list(self.page_residency)
+            }, f)
 
     def __str__(self):
         return "LRU-EvictionPolicy - Priority Queue: {}, Last Page Reference: {}, Page Residency: {}".format(
@@ -157,10 +176,13 @@ if __name__ == "__main__":
     # Testing Space
     """
     lru_dep = LRUEvictionPolicy()
-    lru_dep.record_access(0, 1)
-    lru_dep.record_access(10, 2)
-    lru_dep.record_access(20, 3)
-    lru_dep.record_access(30, 2)
+    lru_dep.record_access(0, 1, True)
+    lru_dep.record_access(10, 2, True)
+    lru_dep.record_access(20, 3, True)
+    lru_dep.record_access(30, 2, True)
+    print(lru_dep)
+    lru_dep.persist_to_file('test.json')
+    lru_dep = LRUEvictionPolicy(init_from_file = 'test.json')
     print(lru_dep)
     print(lru_dep.evict(), lru_dep.evict(), lru_dep.evict())
     """
