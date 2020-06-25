@@ -142,6 +142,7 @@ if __name__ == "__main__":
     DEFAULT_EVICTION_EVALUATIONS = ["SSD", 1000, "NVM", 1000, "RAM", 1000]
 
     # Simple testing space
+    """
     bps = ProbabilityBasedDataMigrationPolicy({
         "tiers": DEFAULT_TIERS,
         "data_admission_matrix" : [[0.0, 0.5, 0.5], [0.0, 0.1, 0.9], [0.0, 0.0, 1.0]],
@@ -222,4 +223,3 @@ if __name__ == "__main__":
     for i in range(0, len(args.eviction_evaluations), 2):
         for j in range(args.eviction_evaluations[i + 1]):
             print("evict,{},{}".format(args.eviction_evaluations[i], bps.destination_on_eviction_from(args.eviction_evaluations[i])))
-    """
