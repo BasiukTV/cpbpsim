@@ -127,13 +127,18 @@ class FIFODataEvictionPolicy(AbstractDataEvictionPolicy):
     def __init__(self, storage_params=None, config_params=None, init_from_file=None):
 
         if init_from_file:
-            raise NotImplementedError
+            # If the file is given, populate the fifo_queue, and page_residency from the file.
+            import json
+            with open(init_from_file) as f:
+                persisted_state = json.load(f)
+                self.fifo_queue = deque(persisted_state['fifo_queue'])
+                self.page_residency = set(persisted_state['page_residency'])
+        else:
+            # FIFO queue determining the order of page evictions
+            self.fifo_queue = deque()
 
-        # FIFO queue determining the order of page evictions
-        self.fifo_queue = deque()
-
-        # Keep track of the pages actually resident with this policy (subject to eviction)
-        self.page_residency = set()
+            # Keep track of the pages actually resident with this policy (subject to eviction)
+            self.page_residency = set()
 
     def record_access(self, timestamp, pageID, resident, type=None):
         # If the page is not in the FIFO queue yet, add it
@@ -164,7 +169,14 @@ class FIFODataEvictionPolicy(AbstractDataEvictionPolicy):
             self.page_residency.remove(pageID)
 
     def persist_to_file(self, file_name):
-        raise NotImplementedError
+        """We save the contents of the fifo_queue, and page_residency to the file."""
+
+        import json
+        with open(file_name, 'w') as f:
+            json.dump({
+                'fifo_queue': list(self.fifo_queue),
+                'page_residency': list(self.page_residency)
+            }, f)
 
     def __str__(self):
         return "FIFO-EvictionPolicy - FIFO Queue: {}, Page Residency: {}".format(self.fifo_queue, self.page_residency)
@@ -185,5 +197,17 @@ if __name__ == "__main__":
     lru_dep = LRUEvictionPolicy(init_from_file = 'test.json')
     print(lru_dep)
     print(lru_dep.evict(), lru_dep.evict(), lru_dep.evict())
+    """
+    """
+    fifo_dep = FIFODataEvictionPolicy()
+    fifo_dep.record_access(0, 1, True)
+    fifo_dep.record_access(10, 2, True)
+    fifo_dep.record_access(20, 3, True)
+    fifo_dep.record_access(30, 2, True)
+    print(fifo_dep)
+    fifo_dep.persist_to_file('test.json')
+    fifo_dep = FIFODataEvictionPolicy(init_from_file = 'test.json')
+    print(fifo_dep)
+    print(fifo_dep.evict(), fifo_dep.evict(), fifo_dep.evict())
     """
     pass
