@@ -38,7 +38,9 @@ class EagerDataAdmissionPolicy(AbstractDataAdmissionPolicy):
         return True
 
     def persist_to_file(self, file_name):
-        pass
+        # Just create/open a file, but don't actually write anything to it
+        with open(file_name, 'w') as f:
+            pass
 
     def __str__(self):
         return "EagerDataAdmissionPolicy"
@@ -59,7 +61,9 @@ class NeverDataAdmissionPolicy(AbstractDataAdmissionPolicy):
         return False
 
     def persist_to_file(self, file_name):
-        pass
+        # Just create/open a file, but don't actually write anything to it
+        with open(file_name, 'w') as f:
+            pass
 
     def __str__(self):
         return "NeverDataAdmissionPolicy"

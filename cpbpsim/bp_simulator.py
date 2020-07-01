@@ -91,12 +91,13 @@ class BufferPoolSimulator():
         self.monitor = TenantMetricsMonitor(logger)
 
         logger.info("Instantiating the Buffer Pool Simulator.")
-        logger.info("Storage tier parameters: {}".format(self.params))
-        logger.info("Data Admission Policies: {}".format(self.DAPs))
-        logger.info("Data Eviction Policies: {}".format(self.DEPs))
-        logger.info("Tenant SLAs: {}".format(self.SLAs))
-        logger.info("Tenant DMPs: {}".format(self.DMPs))
-        logger.info("Tenant Metrics Monitor: {}".format(self.monitor))
+        logger.debug("Storage tier parameters: {}".format(self.params))
+        logger.debug("Page metadata: {}".format(self.metadata))
+        logger.debug("Data Admission Policies: {}".format(self.DAPs))
+        logger.debug("Data Eviction Policies: {}".format(self.DEPs))
+        logger.debug("Tenant SLAs: {}".format(self.SLAs))
+        logger.debug("Tenant DMPs: {}".format(self.DMPs))
+        logger.debug("Tenant Metrics Monitor: {}".format(self.monitor))
 
     def sim(self, N, timestamps, pages, tenants, types):
         """
@@ -214,6 +215,79 @@ class BufferPoolSimulator():
         self.monitor.log_aggregate_metrics(self.warmup)
         logger.info("Simulation finished.")
 
+    def dump_state(self, dump_dir, logger):
+        """The function to dump the state of the simulator into dump_dir once the simulation is finished."""
+        logger.info("Starting to dump the state of the simulator into: {}".format(dump_dir))
+
+        import json
+        file_name = "{}tier_params.json".format(dump_dir)
+        logger.info("Dumping the storage tier parameters into: {}".format(file_name))
+        with open(file_name, 'w') as f:
+            json.dump(self.params, f)
+
+        file_name = "{}tier_metadata.json".format(dump_dir)
+        logger.info("Dumping the storage tier metadata into: {}".format(file_name))
+        with open(file_name, 'w') as f:
+            json.dump(self.metadata, f)
+
+        # Dumping the data admission policies
+        os.makedirs("{}DAPs/".format(dump_dir), exist_ok=True)
+        for dap in self.DAPs:
+            typ = None
+            if isinstance(self.DAPs[dap], EagerDataAdmissionPolicy):
+                typ = "EAG"
+            elif isinstance(self.DAPs[dap], NeverDataAdmissionPolicy):
+                typ = "NEV"
+            elif isinstance(self.DAPs[dap], Q2DataAdmissionPolicy):
+                typ = "2Q"
+            else:
+                raise ValueError("Unknown data admission policy name: {}".format(self.DAPs[dap]))
+
+            file_name = "{}DAPs/{}_{}_DAP.json".format(dump_dir, dap, typ)
+            logger.info("Dumping the DAP for {} tier into: {}".format(dap, file_name))
+            self.DAPs[dap].persist_to_file(file_name)
+
+        # Dumping the data eviction policies
+        os.makedirs("{}DEPs/".format(dump_dir), exist_ok=True)
+        for dep in self.DEPs:
+            typ = None
+            if isinstance(self.DEPs[dep], LRUEvictionPolicy):
+                typ = "LRU"
+            elif isinstance(self.DEPs[dep], FIFODataEvictionPolicy):
+                typ = "FIFO"
+            else:
+                raise ValueError("Unknown data eviction policy name: {}".format(self.DEPs[dep]))
+
+            file_name = "{}DEPs/{}_{}_DEP.json".format(dump_dir, dep, typ)
+            logger.info("Dumping the DEP for {} tier into: {}".format(dep, file_name))
+            self.DEPs[dep].persist_to_file(file_name)
+
+        # Dumping the data migration policies
+        os.makedirs("{}DMPs/".format(dump_dir), exist_ok=True)
+        for dmp in self.DMPs:
+            typ = None
+            if isinstance(self.DMPs[dmp], ProbabilityBasedDataMigrationPolicy):
+                typ = "PROB"
+            else:
+                raise ValueError("Unknown data migration policy name: {}".format(self.DMPs[dmp]))
+
+            file_name = "{}DMPs/{}_{}_DMP.json".format(dump_dir, dmp, typ)
+            logger.info("Dumping the DMP for {} tenant into: {}".format(dmp, file_name))
+            self.DMPs[dmp].persist_to_file(file_name)
+
+        # Dumping the tenant SLA policies
+        os.makedirs("{}SLAs/".format(dump_dir), exist_ok=True)
+        for sla in self.SLAs:
+            typ = None
+            if isinstance(self.SLAs[sla], AveragingPiecewiseLinearSLAPenaltyFunction):
+                typ = "APWL"
+            else:
+                raise ValueError("Unknown SLA policy name: {}".format(self.SLAs[sla]))
+
+            file_name = "{}SLAs/{}_{}_SLA.json".format(dump_dir, sla, typ)
+            logger.info("Dumping the SLA for {} tenant into: {}".format(sla, file_name))
+            self.SLAs[sla].persist_to_file(file_name)
+
 if __name__ == "__main__":
 
     # Default values
@@ -244,6 +318,15 @@ if __name__ == "__main__":
                 - SLA violation penalty accrued by each tenant.
         ''')
 
+    parser.add_argument('-ID', '--init-dir', type=str, default=None,
+        help='''Directory from which the simulator state will be initialized.
+
+                The directory contents are expected to be generated by the dumping
+                of the simulator state affter the previous simulation (see -SD option).
+
+                If this option is provided, all of the below options will be ignored:
+                    -P, -A, -E, -T, -D.
+                They will be read in from the directory.''')
     parser.add_argument('-P', '--tier-params', type=str, default=DEFAULT_TIER_PARAMS_FILE,
         help="""Input file with the storage tier parameters. Expected contents:
                     header1,header2,header3,...
@@ -292,6 +375,8 @@ if __name__ == "__main__":
         help='Logging level. Default: {}'.format(DEFAULT_LOG_LEVEL))
     parser.add_argument('-LF', '--log-file', type=str, default=DEFAULT_LOG_FILE,
         help='Log file. Default: {}'.format(DEFAULT_LOG_FILE))
+    parser.add_argument('-SD', '--sim-state-dump-dir', type=str, default=None,
+        help='Directory where (if given) the state of the simulator will be saved after the simulation.')
     args = parser.parse_args()
 
     # Start validating input parameters
@@ -306,151 +391,252 @@ if __name__ == "__main__":
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
-    # Read in and validate storage tier parameters
-    assert os.path.isfile(args.tier_params), "Storage tier parameters file value must be a valid path. Got: {}".format(args.tier_params)
     storage_tier_params = {} # Container for all storage tier parameters
-    with open(args.tier_params) as f:
-        f.readline() # Skip the headers line
-
-        params = f.readline().strip() # Read in the first meaningful line
-        while params:
-            params = params.split(',')
-            assert len(params) >= 6 and len(params) % 3 == 0, \
-                "Number of storage tier parameters must be at least 6 and divisible by 3. Got: {}".format(params)
-
-            name, free_space, CPU_acess, SLO_costs = params[0], int(params[1]), bool(params[2]), {}
-            for i in range(3, len(params), 3):
-                acces_type, SLO_type , SLO_cost = params[i], params[i + 1], float(params[i + 2])
-                if acces_type not in SLO_costs:
-                    SLO_costs[acces_type] = {}
-                SLO_costs[acces_type][SLO_type] = SLO_cost
-
-            storage_tier_params[name] = {"free_space" : free_space, "CPU_access" : CPU_acess, "SLO_costs" : SLO_costs}
-            params = f.readline().strip() # Read in the next line
-
-    # Read in and validate data admission policies tier parameters
-    assert os.path.isfile(args.tier_daps), "Storage tier data admission policies file value must be a valid path. Got: {}".format(args.tier_daps)
+    page_metadata = {} # Start with cold buffer pool
     data_admission_policies = {}
-    with open(args.tier_daps) as f:
-        f.readline() # Skip the headers line
-
-        dap = f.readline().strip()
-        while dap:
-            dap = dap.split(',')
-            assert len(dap) >= 2, "Number of tier data admission policy must be at least 2. Got: {}".format(dap)
-            tier, policy = dap[0], dap[1]
-
-            if policy == "EAG":
-                data_admission_policies[tier] = EagerDataAdmissionPolicy()
-            elif policy == "NEV":
-                data_admission_policies[tier] = NeverDataAdmissionPolicy()
-            elif policy == "2Q":
-                data_admission_policies[tier] = Q2DataAdmissionPolicy()
-            else:
-                raise ValueError("Unknown data admission policy name: {}".format(policy))
-
-            dap = f.readline().strip()
-
-    # Read in and validate data admission policies tier parameters
-    assert os.path.isfile(args.tier_deps), "Storage tier data admission policies file value must be a valid path. Got: {}".format(args.tier_daps)
     data_eviction_policies = {}
-    with open(args.tier_deps) as f:
-        f.readline() # Skip the headers line
-
-        dep = f.readline().strip()
-        while dep:
-            dep = dep.split(',')
-            assert len(dep) >= 2, "Number of tier data admission policy must be at least 2. Got: {}".format(dep)
-            tier, policy = dep[0], dep[1]
-
-            if policy == "LRU":
-                data_eviction_policies[tier] = LRUEvictionPolicy()
-            elif policy == "FIFO":
-                data_eviction_policies[tier] = FIFODataEvictionPolicy()
-            else:
-                raise ValueError("Unknown data eviction policy type: {}".format(policy))
-
-            dep = f.readline().strip()
-
-    # Read in and validate tenant SLAs
-    assert os.path.isfile(args.tenant_slas), "Tenant SLAs file value must be a valid path. Got: {}".format(args.tenant_slas)
-    tenant_slas = {}
-    with open(args.tenant_slas) as f:
-        f.readline() # Skip the headers line
-
-        tenant = f.readline().strip()
-        while tenant:
-            tenant = tenant.split(',')
-            assert len(tenant) >= 4, "number of tenant SLA parameters must be at least 4. Got: {}".format(tenant)
-
-            tenant_id, slo_type, eval_period, sla_func_type = int(tenant[0]), tenant[1], int(tenant[2]), tenant[3]
-
-            if sla_func_type == "APWL":
-                assert len(tenant) >= 6 and len(tenant) % 3 == 0, \
-                    "number of tenant SLA parameters must be at least 6 and divisible by 3. Got: {}".format(tenant)
-
-                baseline_slope = float(tenant[4])
-                baseline_intercept = float(tenant[5])
-
-                intervals = {}
-                for i in range(6, len(tenant), 3):
-                    interval_start = float(tenant[i])
-                    interval_slope = float(tenant[i + 1])
-                    interval_intercept = float(tenant[i + 2])
-
-                    intervals[interval_start] = (interval_slope, interval_intercept)
-
-                    tenant_slas[tenant_id] = AveragingPiecewiseLinearSLAPenaltyFunction(
-                        slo_type, eval_period, {"baseline_slope": baseline_slope, "baseline_intercept" : baseline_intercept, "intervals": intervals}, logger)
-            else:
-                raise ValueError("Unknown SLA penalty function type: {}".format(sla_func_type))
-
-            tenant = f.readline().strip()
-
-    # Read in and validate tenant DMPs
-    assert os.path.isfile(args.tenant_dmps), "Tenant DMPs file value must be a valid path. Got: {}".format(args.tenant_dmps)
     tenant_dmps = {}
-    with open(args.tenant_dmps) as f:
-        f.readline() # Skip the headers line
+    tenant_slas = {}
 
-        dmp = f.readline().strip()
-        while dmp:
-            dmp = dmp.split(',')
-            assert len(dmp) >= 5, "Tenant DMP must contain at least 5 parameters Got: {}".format(dmp)
+    # If initializing from files
+    if args.init_dir == None:
+        # Read in and validate storage tier parameters
+        assert os.path.isfile(args.tier_params), "Storage tier parameters file value must be a valid path. Got: {}".format(args.tier_params)
+        with open(args.tier_params) as f:
+            f.readline() # Skip the headers line
+            params = f.readline().strip() # Read in the first meaningful line
+            while params:
+                params = params.split(',')
+                assert len(params) >= 6 and len(params) % 3 == 0, \
+                    "Number of storage tier parameters must be at least 6 and divisible by 3. Got: {}".format(params)
 
-            tenant_id, dmp_type, tiers_num = int(dmp[0]), dmp[1], int(dmp[2])
+                name, free_space, CPU_acess, SLO_costs = params[0], int(params[1]), bool(params[2]), {}
+                for i in range(3, len(params), 3):
+                    acces_type, SLO_type , SLO_cost = params[i], params[i + 1], float(params[i + 2])
+                    if acces_type not in SLO_costs:
+                        SLO_costs[acces_type] = {}
+                    SLO_costs[acces_type][SLO_type] = SLO_cost
 
-            assert tenant_id in tenant_slas, \
-                "Found tenant ID for which there's no SLA: {}".format(tenant_id)
+                storage_tier_params[name] = {"free_space" : free_space, "CPU_access" : CPU_acess, "SLO_costs" : SLO_costs}
+                params = f.readline().strip() # Read in the next line
 
-            assert len(dmp) >= 3 + tiers_num, "Tenant DMP must contain at least {} parameters Got: {}".format(3 + tiers_num, dmp)
-            dmp_tiers = dmp[3:3 + tiers_num] # Read in data migration policy tiers
+        # Read in and validate data admission policies tier parameters
+        assert os.path.isfile(args.tier_daps), "Storage tier data admission policies file value must be a valid path. Got: {}".format(args.tier_daps)
+        with open(args.tier_daps) as f:
+            f.readline() # Skip the headers line
+            dap = f.readline().strip()
+            while dap:
+                dap = dap.split(',')
+                assert len(dap) >= 2, "Number of tier data admission policy must be at least 2. Got: {}".format(dap)
+                tier, policy = dap[0], dap[1]
 
-            if dmp_type == "PROB":
-                assert len(dmp) >= 3 + tiers_num, "Tenant Probability Based DMP must contain at least {} parameters Got: {}".format(
-                    3 + tiers_num + (2 * tiers_num * tiers_num), dmp)
+                if policy == "EAG":
+                    data_admission_policies[tier] = EagerDataAdmissionPolicy()
+                elif policy == "NEV":
+                    data_admission_policies[tier] = NeverDataAdmissionPolicy()
+                elif policy == "2Q":
+                    data_admission_policies[tier] = Q2DataAdmissionPolicy()
+                else:
+                    raise ValueError("Unknown data admission policy name: {}".format(policy))
 
-                # Prepare square data admission and eviction matrices
-                admission_matrix = []
-                eviction_matrix = []
-                for i in range(tiers_num):
-                    admission_matrix.append(list(map(float, dmp[
-                        3 + tiers_num + (i * tiers_num) : 3 + (2 * tiers_num) + (i * tiers_num)])))
-                    eviction_matrix.append(list(map(float, dmp[
-                        3 + tiers_num + (tiers_num**2) + (i * tiers_num) : 3 + (2 * tiers_num) + (tiers_num**2) + (i * tiers_num)])))
+                dap = f.readline().strip()
 
-                # Instantiate ProbabilityBasedDataMigrationPolicy
-                tenant_dmps[tenant_id] = ProbabilityBasedDataMigrationPolicy(
-                    {"tiers" : dmp_tiers, "data_admission_matrix" : admission_matrix, "data_eviction_matrix" : eviction_matrix})
-            else:
-                raise ValueError("Unknown SLA penalty function type: {}".format(sla_func_type))
+        # Read in and validate data admission policies tier parameters
+        assert os.path.isfile(args.tier_deps), "Storage tier data admission policies file value must be a valid path. Got: {}".format(args.tier_daps)
+        with open(args.tier_deps) as f:
+            f.readline() # Skip the headers line
+            dep = f.readline().strip()
+            while dep:
+                dep = dep.split(',')
+                assert len(dep) >= 2, "Number of tier data admission policy must be at least 2. Got: {}".format(dep)
+                tier, policy = dep[0], dep[1]
 
+                if policy == "LRU":
+                    data_eviction_policies[tier] = LRUEvictionPolicy()
+                elif policy == "FIFO":
+                    data_eviction_policies[tier] = FIFODataEvictionPolicy()
+                else:
+                    raise ValueError("Unknown data eviction policy type: {}".format(policy))
+
+                dep = f.readline().strip()
+
+        # Read in and validate tenant SLAs
+        assert os.path.isfile(args.tenant_slas), "Tenant SLAs file value must be a valid path. Got: {}".format(args.tenant_slas)
+        with open(args.tenant_slas) as f:
+            f.readline() # Skip the headers line
+            tenant = f.readline().strip()
+            while tenant:
+                tenant = tenant.split(',')
+                assert len(tenant) >= 4, "number of tenant SLA parameters must be at least 4. Got: {}".format(tenant)
+
+                tenant_id, slo_type, eval_period, sla_func_type = int(tenant[0]), tenant[1], int(tenant[2]), tenant[3]
+
+                if sla_func_type == "APWL":
+                    assert len(tenant) >= 6 and len(tenant) % 3 == 0, \
+                        "number of tenant SLA parameters must be at least 6 and divisible by 3. Got: {}".format(tenant)
+
+                    baseline_slope = float(tenant[4])
+                    baseline_intercept = float(tenant[5])
+
+                    intervals = {}
+                    for i in range(6, len(tenant), 3):
+                        interval_start = float(tenant[i])
+                        interval_slope = float(tenant[i + 1])
+                        interval_intercept = float(tenant[i + 2])
+
+                        intervals[interval_start] = (interval_slope, interval_intercept)
+
+                        tenant_slas[tenant_id] = AveragingPiecewiseLinearSLAPenaltyFunction(
+                            logger,
+                            slo_type = slo_type,
+                            eval_period = eval_period,
+                            mapping_func = {"baseline_slope": baseline_slope, "baseline_intercept" : baseline_intercept, "intervals": intervals})
+                else:
+                    raise ValueError("Unknown SLA penalty function type: {}".format(sla_func_type))
+
+                tenant = f.readline().strip()
+
+        # Read in and validate tenant DMPs
+        assert os.path.isfile(args.tenant_dmps), "Tenant DMPs file value must be a valid path. Got: {}".format(args.tenant_dmps)
+        with open(args.tenant_dmps) as f:
+            f.readline() # Skip the headers line
             dmp = f.readline().strip()
+            while dmp:
+                dmp = dmp.split(',')
+                assert len(dmp) >= 5, "Tenant DMP must contain at least 5 parameters Got: {}".format(dmp)
+
+                tenant_id, dmp_type, tiers_num = int(dmp[0]), dmp[1], int(dmp[2])
+
+                assert tenant_id in tenant_slas, \
+                    "Found tenant ID for which there's no SLA: {}".format(tenant_id)
+
+                assert len(dmp) >= 3 + tiers_num, "Tenant DMP must contain at least {} parameters Got: {}".format(3 + tiers_num, dmp)
+                dmp_tiers = dmp[3:3 + tiers_num] # Read in data migration policy tiers
+
+                if dmp_type == "PROB":
+                    assert len(dmp) >= 3 + tiers_num, "Tenant Probability Based DMP must contain at least {} parameters Got: {}".format(
+                        3 + tiers_num + (2 * tiers_num * tiers_num), dmp)
+
+                    # Prepare square data admission and eviction matrices
+                    admission_matrix = []
+                    eviction_matrix = []
+                    for i in range(tiers_num):
+                        admission_matrix.append(list(map(float, dmp[
+                            3 + tiers_num + (i * tiers_num) : 3 + (2 * tiers_num) + (i * tiers_num)])))
+                        eviction_matrix.append(list(map(float, dmp[
+                            3 + tiers_num + (tiers_num**2) + (i * tiers_num) : 3 + (2 * tiers_num) + (tiers_num**2) + (i * tiers_num)])))
+
+                    # Instantiate ProbabilityBasedDataMigrationPolicy
+                    tenant_dmps[tenant_id] = ProbabilityBasedDataMigrationPolicy(
+                        {"tiers" : dmp_tiers, "data_admission_matrix" : admission_matrix, "data_eviction_matrix" : eviction_matrix})
+                else:
+                    raise ValueError("Unknown DMP type: {}".format(dmp_type))
+
+                dmp = f.readline().strip()
+    else:
+        # If we're initializing the simulator from the directory of dumped state
+        assert os.path.isdir(args.init_dir), "Given simulator initialization directory is invalid: {}".format(args.init_dir)
+
+        import json
+
+        # Reading in the storage tier parameters from the initialization directory
+        storage_tier_params_file = "{}tier_params.json".format(args.init_dir)
+        assert os.path.isfile(storage_tier_params_file), "Was not able to find the storage tier parameters file at: {}".format(storage_tier_params_file)
+        with open(storage_tier_params_file) as f:
+            storage_tier_params = json.load(f)
+
+        # Reading in the page metadata from the initialization directory
+        page_metadata_file = "{}tier_metadata.json".format(args.init_dir)
+        assert os.path.isfile(page_metadata_file), "Was not able to find the storage tier metadata file at: {}".format(page_metadata_file)
+        with open(page_metadata_file) as f:
+            page_metadata = dict(map(lambda kv: (int(kv[0]), (kv[1][0], kv[1][1])), json.load(f).items()))
+
+        # Reading in the data admission policies from the initialization directory
+        data_admission_policies_dir = "{}DAPs/".format(args.init_dir)
+        assert os.path.isdir(data_admission_policies_dir), \
+            "Was not able to find the data admission policies directory at: {}".format(data_admission_policies_dir)
+        # Iterate through the files in the DAPs directory
+        for f in os.listdir(data_admission_policies_dir):
+            file_name, extension = f.split('.')
+            assert extension == "json", "Was expecting file name of TIER_TYPE_DAP.json format, got: {}".format(f)
+
+            tier, typ, dap = file_name.split('_')
+            assert dap == "DAP", "Was expecting file name of TIER_TYPE_DAP.json format, got: {}".format(f)
+
+            dap_file_path = "{}{}".format(data_admission_policies_dir, f)
+            if typ == "EAG":
+                data_admission_policies[tier] = EagerDataAdmissionPolicy(init_from_file=dap_file_path)
+            elif typ == "NEV":
+                data_admission_policies[tier] = NeverDataAdmissionPolicy(init_from_file=dap_file_path)
+            elif typ == "2Q":
+                data_admission_policies[tier] = Q2DataAdmissionPolicy(init_from_file=dap_file_path)
+            else:
+                raise ValueError("Unknown data admission policy type: {}".format(typ))
+
+        # Reading in the data eviction policies from the initialization directory
+        data_eviction_policies_dir = "{}DEPs/".format(args.init_dir)
+        assert os.path.isdir(data_eviction_policies_dir), \
+            "Was not able to find the data eviction policies directory at: {}".format(data_eviction_policies_dir)
+        # Iterate through the files in the DAPs directory
+        for f in os.listdir(data_eviction_policies_dir):
+            file_name, extension = f.split('.')
+            assert extension == "json", "Was expecting file name of TIER_TYPE_DEP.json format, got: {}".format(f)
+
+            tier, typ, dep = file_name.split('_')
+            assert dep == "DEP", "Was expecting file name of TIER_TYPE_DEP.json format, got: {}".format(f)
+
+            dep_file_path = "{}{}".format(data_eviction_policies_dir, f)
+            if typ == "LRU":
+                data_eviction_policies[tier] = LRUEvictionPolicy(init_from_file=dep_file_path)
+            elif typ == "FIFO":
+                data_eviction_policies[tier] = FIFODataEvictionPolicy(init_from_file=dep_file_path)
+            else:
+                raise ValueError("Unknown data eviction policy type: {}".format(typ))
+
+        # Reading in the data migration policies from the initialization directory
+        data_migration_policies_dir = "{}DMPs/".format(args.init_dir)
+        assert os.path.isdir(data_migration_policies_dir), \
+            "Was not able to find the data migration policies directory at: {}".format(data_migration_policies_dir)
+        # Iterate through the files in the DAPs directory
+        for f in os.listdir(data_migration_policies_dir):
+            file_name, extension = f.split('.')
+            assert extension == "json", "Was expecting file name of TIER_TYPE_DMP.json format, got: {}".format(f)
+
+            tenant, typ, dmp = file_name.split('_')
+            assert dmp == "DMP", "Was expecting file name of TIER_TYPE_DMP.json format, got: {}".format(f)
+
+            dmp_file_path = "{}{}".format(data_migration_policies_dir, f)
+            if typ == "PROB":
+                tenant_dmps[int(tenant)] = ProbabilityBasedDataMigrationPolicy(init_from_file=dmp_file_path)
+            else:
+                raise ValueError("Unknown data migration policy type: {}".format(typ))
+
+        # Reading in the SLA policies from the initialization directory
+        tenant_sla_policies_dir = "{}SLAs/".format(args.init_dir)
+        assert os.path.isdir(tenant_sla_policies_dir), \
+            "Was not able to find the tenant SLA policies directory at: {}".format(tenant_sla_policies_dir)
+        # Iterate through the files in the DAPs directory
+        for f in os.listdir(tenant_sla_policies_dir):
+            file_name, extension = f.split('.')
+            assert extension == "json", "Was expecting file name of TENANT_TYPE_SLA.json format, got: {}".format(f)
+
+            tenant, typ, sla = file_name.split('_')
+            assert sla == "SLA", "Was expecting file name of TENANT_TYPE_SLA.json format, got: {}".format(f)
+
+            sla_file_path = "{}{}".format(tenant_sla_policies_dir, f)
+            if typ == "APWL":
+                tenant_slas[int(tenant)] = AveragingPiecewiseLinearSLAPenaltyFunction(logger=logger, init_from_file=sla_file_path)
+            else:
+                raise ValueError("Unknown tenant SLA policy type: {}".format(typ))
 
     # Validate the page access sequence file
     assert os.path.isfile(args.pas_file), "Page access sequence file value must be a valid path. Got: {}".format(args.pas_file)
 
-    # Instantiate the BP simulator and run the simulation
+    # Validate the simulator state dump directory if given
+    assert args.sim_state_dump_dir == None or os.path.isdir(args.sim_state_dump_dir), \
+        "Simulator state dump directory (if given) must be a valid path. Got: {}".format(args.sim_state_dump_dir)
+
+    # Instantiate the BP simulator
     bpsim = BufferPoolSimulator(
         params=storage_tier_params,
         DAPs=data_admission_policies,
@@ -458,7 +644,7 @@ if __name__ == "__main__":
         SLAs=tenant_slas,
         DMPs=tenant_dmps,
         warmup = args.warmup,
-        metadata={}, # Start with cold buffer pool
+        metadata=page_metadata,
         logger=logger)
 
     # Read in the page access requests
@@ -489,3 +675,7 @@ if __name__ == "__main__":
         logger.error("Tenant DMPs: {}".format(bpsim.DMPs))
 
         raise e
+
+    # Dump the simulator state if requested:
+    if args.sim_state_dump_dir != None:
+        bpsim.dump_state(args.sim_state_dump_dir, logger)

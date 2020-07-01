@@ -61,6 +61,10 @@ class TenantMetricsMonitor(AbstractMetricsMonitor):
                 else:
                     tier_count[tier] = tier_count[tier] + 1
 
+            # All the counts are below from_time
+            if total_count == 0:
+                continue
+
             # Convert tier counts into percentages
             for tier in tier_count:
                 tier_count[tier] = tier_count[tier] / total_count
