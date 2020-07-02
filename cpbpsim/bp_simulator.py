@@ -12,7 +12,7 @@ from monitoring.monitoring import TenantMetricsMonitor
 
 class BufferPoolSimulator():
 
-    def __init__(self, params, DAPs, DEPs, SLAs, DMPs, warmup, metadata={}, logger=logging.getLogger(__name__)):
+    def __init__(self, params, DAPs, DEPs, SLAs, DMPs, metadata={}, logger=logging.getLogger(__name__)):
         """
             Constructor for the BufferPoolSimulator.
             Expects:
@@ -77,15 +77,11 @@ class BufferPoolSimulator():
             assert isinstance(metadata[pageID], tuple) and isinstance(metadata[pageID][0], str) and isinstance(metadata[pageID][1], bool), \
                 "metadata must map pageIDs to tuples of strings and booleans. Got: {}".format(metadata[pageID])
 
-        # Validate warmup
-        assert isinstance(warmup, int) and warmup >= 0, "warmup must be a non-negative integer. Got: {}".format(warmup)
-
         self.params = params
         self.DAPs = DAPs
         self.DEPs = DEPs
         self.SLAs = SLAs
         self.DMPs = DMPs
-        self.warmup = warmup
         self.metadata = metadata
         self.logger = logger
         self.monitor = TenantMetricsMonitor(logger)
@@ -99,21 +95,47 @@ class BufferPoolSimulator():
         logger.debug("Tenant DMPs: {}".format(self.DMPs))
         logger.debug("Tenant Metrics Monitor: {}".format(self.monitor))
 
-    def sim(self, N, timestamps, pages, tenants, types):
+    def sim(self, N, timestamps, pages, tenants, types, output_file=None, from_time=0, to_time=None, warmup=0):
         """
             Processes N samples of the data page access requests.
             Expects N timestamps, page IDs, tenant IDs, and access types.
             Returns SLA violation penalties accumulate for each tenant.
         """
         logger = self.logger
+        logger.info("Starting to validate the simulation input data.")
 
+        # Validate N, timestamps, pages, tenants, types
+        assert isinstance(N, int) and N > 0, "N must be a positive integer, got: {}".format(N)
+        assert isinstance(timestamps, list) and len(timestamps) == N, "timestamps must be a list of {} elements. Got: {}".format(N, timestamps)
+        for t in timestamps:
+            assert isinstance(t, int), "timestamps must only contain integers, got: {}".format(t)
+        assert isinstance(pages, list) and len(pages) == N, "pages must be a list of {} elements. Got: {}".format(N, pages)
+        for p in pages:
+            assert isinstance(p, int), "pages must only contain integers, got: {}".format(p)
+        assert isinstance(tenants, list) and len(tenants) == N, "tenants must be a list of {} elements. Got: {}".format(N, tenants)
+        for t in tenants:
+            assert isinstance(t, int), "tenants must only contain integers, got: {}".format(t)
+        assert isinstance(types, list) and len(types) == N, "types must be a list of {} elements. Got: {}".format(N, types)
+        for t in types:
+            assert isinstance(t, str), "types must only contain strings, got: {}".format(t)
+
+        # Validate output_file, warmup, from_time, to_time
+        assert output_file == None or os.path.isfile(output_file), "Output file, if given, must be a valid path, got: {}".format(output_file)
+        assert isinstance(warmup, int) and warmup >= 0, "warmup must be a non-negative integer. Got: {}".format(warmup)
+        assert isinstance(from_time, int) and from_time >= 0, "from_time must be a non-negative integer. Got: {}".format(from_time)
+        assert to_time == None or (isinstance(to_time, int) and to_time >= from_time), \
+            "to_time, if given, must be a non-negative integer and no less than from_time. Got: {}".format(to_time)
+
+        logger.info("Starting the simulation.")
         for i in range(N):
             time, pageID, tenantID, access_type = timestamps[i], pages[i], tenants[i], types[i]
+
+            # Skip the request if its timestamp is below from_time or above to_time
+            if time < from_time or (to_time != None and time > to_time):
+                continue
+
             logger.debug("Page access request #{} - time:{}, pageID:{}, tenantID:{}, access_type:{}".format(
                 i + 1, time, pageID, tenantID, access_type))
-
-            #logger.debug("Metadata: {}".format(self.metadata))
-            #logger.debug("DEPs: {}".format(self.DEPs))
 
             # Retrieve the current storage tier the page ID belongs to
             # Check whether the page is new
@@ -172,11 +194,13 @@ class BufferPoolSimulator():
             for j in range(len(data_access_chain)):
                 # Update the SLO costs
                 d_pageID, d_tier, d_access_type = data_access_chain[j] # Destination pageID, tier and access type
-                slo_val += self.params[d_tier]["SLO_costs"][d_access_type][self.SLAs[tenantID].slo_type]
+                if time >= warmup:
+                    slo_val += self.params[d_tier]["SLO_costs"][d_access_type][self.SLAs[tenantID].slo_type]
                 if d_access_type == "copy":
                     # If the page was copied over, we need to add the slo cost of reading the page as well
                     s_pageID, s_tier, s_access_type = data_access_chain[j + 1]
-                    slo_val += self.params[s_tier]["SLO_costs"]["read"][self.SLAs[tenantID].slo_type]
+                    if time >= warmup:
+                        slo_val += self.params[s_tier]["SLO_costs"]["read"][self.SLAs[tenantID].slo_type]
 
                     # When the page is copied it has to become a resident of the destination storage tier
                     # For non-copy accesses page will become resident through record_access method with resident=True
@@ -194,7 +218,8 @@ class BufferPoolSimulator():
                     self.metadata[d_pageID] = (self.metadata[d_pageID][0], True)
 
             # Record SLO value satisfaction
-            self.SLAs[tenantID].record_SLO(time, slo_val)
+            if time >= warmup:
+                self.SLAs[tenantID].record_SLO(time, slo_val)
 
             # Record page access request for DAPs and DEPs
             for t in self.DAPs:
@@ -203,16 +228,28 @@ class BufferPoolSimulator():
                 self.DEPs[t].record_access(time, pageID, t == self.metadata[pageID][0], access_type)
 
             # Record monitoring metrics
-            self.monitor.record_metric(time, tenantID, tier, data_access_chain, slo_val)
+            if time >= warmup:
+                self.monitor.record_metric(time, tenantID, tier, data_access_chain, slo_val)
 
-        # Printout the SLA penalty results
-        print("tenantID,SLA_penalty")
+        # Calculate the SLA penalty results
+        penalties = {}
         for t in self.SLAs:
             logger.info("Evaluating SLA penalty for tenantID:{}".format(t))
-            print("{},{}".format(t, self.SLAs[t].eval_penalty(self.warmup)))
+            penalties[t] = self.SLAs[t].eval_penalty(warmup)
+
+        # output results
+        if output_file:
+            with open(output_file, 'w') as f:
+                f.write("tenantID,SLA_penalty\n")
+                for t in penalties:
+                    f.write("{},{}\n".format(t, penalties[t]))
+        else:
+            print("tenantID,SLA_penalty")
+            for t in penalties:
+                print("{},{}".format(t, penalties[t]))
 
         # Log the metrics
-        self.monitor.log_aggregate_metrics(self.warmup)
+        self.monitor.log_aggregate_metrics(warmup)
         logger.info("Simulation finished.")
 
     def dump_state(self, dump_dir, logger):
@@ -298,8 +335,6 @@ if __name__ == "__main__":
     DEFAULT_TENANT_DMPS_FILE = "data_sets/tenant_dmps.csv"
     DEFAULT_PAS_FILE = "data_sets/page_access_sequence.csv"
 
-    DEFAULT_WARMUP = 15 * 60 * 1000 # 15 minutes
-
     DEFAULT_LOG_LEVEL = "INFO"
     DEFAULT_LOG_FILE = "logs/bp_simulator_{}.log".format(datetime.now().strftime("%Y-%m-%dT%H-%M-%S"))
 
@@ -369,8 +404,14 @@ if __name__ == "__main__":
                     timestamp(ms),tenantID,pageID,access_type(R/W)
                     timestamp(ms),tenantID,pageID,access_type(R/W)
                 Default: {}""".format(DEFAULT_PAS_FILE))
-    parser.add_argument('-W', '--warmup', type=int, default=DEFAULT_WARMUP,
-        help='Warmup time in ms. SLA violation penalties and metrics collection will not be in effect before the warmup expires. Default: {}'.format(DEFAULT_WARMUP))
+    parser.add_argument('-OF', '--output-file', type=str, default=None,
+        help='If given, the simulation results will be stored in the output file.')
+    parser.add_argument('-W', '--warmup', type=int, default=0,
+        help='Warmup timestamp in ms. SLA violation penalties and metrics collection will not be in effect before the warmup expires. Default: 0')
+    parser.add_argument('-FT', '--from-time', type=int, default=0,
+        help='Simulation start timestamp in ms. Page access requests before the from-time will not be processed. Default: 0')
+    parser.add_argument('-TT', '--to-time', type=int, default=None,
+        help='Simulation end timestamp in ms. Page access requests after the to-time will not be processed. Default: None')
     parser.add_argument('-LL', '--log-level', type=str, default=DEFAULT_LOG_LEVEL, choices=["INFO", "DEBUG"],
         help='Logging level. Default: {}'.format(DEFAULT_LOG_LEVEL))
     parser.add_argument('-LF', '--log-file', type=str, default=DEFAULT_LOG_FILE,
@@ -643,7 +684,6 @@ if __name__ == "__main__":
         DEPs=data_eviction_policies,
         SLAs=tenant_slas,
         DMPs=tenant_dmps,
-        warmup = args.warmup,
         metadata=page_metadata,
         logger=logger)
 
@@ -654,18 +694,22 @@ if __name__ == "__main__":
 
         page_access_request = f.readline().strip()
         while page_access_request:
-            page_access_request = page_access_request.split(',')
-            N += 1
-            timestamps.append(int(page_access_request[0]))
-            pages.append(int(page_access_request[1]))
-            tenants.append(int(page_access_request[2]))
-            types.append(page_access_request[3])
+            timestamp, page, tenant, typ = page_access_request.split(',')
+            timestamp, page, tenant = int(timestamp), int(page), int(tenant)
+
+            # We filter out requests by their timestamp (although the same is done during the simulation)
+            if timestamp >= args.from_time and (args.to_time == None or timestamp <= args.to_time):
+                N += 1
+                timestamps.append(timestamp)
+                pages.append(page)
+                tenants.append(tenant)
+                types.append(typ)
 
             page_access_request = f.readline().strip()
 
     # Run the simulation
     try:
-        bpsim.sim(N, timestamps, pages, tenants, types)
+        bpsim.sim(N, timestamps, pages, tenants, types, args.output_file, args.from_time, args.to_time, args.warmup)
     except Exception as e:
         logger.error("Buffer Pool Simulator crashed.")
         logger.error("Storage tier parameters: {}".format(bpsim.params))
