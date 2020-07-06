@@ -200,13 +200,6 @@ class BufferPoolSimulator():
             else:
                 raise ValueError("Unknown tenant SLA policy type: {}".format(typ))
 
-        # Validate the page access sequence file
-        assert os.path.isfile(args.pas_file), "Page access sequence file value must be a valid path. Got: {}".format(args.pas_file)
-
-        # Validate the simulator state dump directory if given
-        assert args.sim_state_dump_dir == None or os.path.isdir(args.sim_state_dump_dir), \
-        "Simulator state dump directory (if given) must be a valid path. Got: {}".format(args.sim_state_dump_dir)
-
         # Instantiate and return the BP simulator
         return BufferPoolSimulator(
             params=storage_tier_params,
