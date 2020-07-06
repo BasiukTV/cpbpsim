@@ -95,6 +95,128 @@ class BufferPoolSimulator():
         logger.debug("Tenant DMPs: {}".format(self.DMPs))
         logger.debug("Tenant Metrics Monitor: {}".format(self.monitor))
 
+    def init_from_dir(init_dir, logger=logging.getLogger(__name__)):
+        assert os.path.isdir(init_dir), "Given simulator initialization directory is invalid: {}".format(args.init_dir)
+
+        import json
+
+        # Container for all parameters
+        storage_tier_params = {}
+        page_metadata = {}
+        data_admission_policies = {}
+        data_eviction_policies = {}
+        tenant_dmps = {}
+        tenant_slas = {}
+
+        # Reading in the storage tier parameters from the initialization directory
+        storage_tier_params_file = "{}tier_params.json".format(init_dir)
+        assert os.path.isfile(storage_tier_params_file), "Was not able to find the storage tier parameters file at: {}".format(storage_tier_params_file)
+        with open(storage_tier_params_file) as f:
+            storage_tier_params = json.load(f)
+
+        # Reading in the page metadata from the initialization directory
+        page_metadata_file = "{}tier_metadata.json".format(init_dir)
+        assert os.path.isfile(page_metadata_file), "Was not able to find the storage tier metadata file at: {}".format(page_metadata_file)
+        with open(page_metadata_file) as f:
+            page_metadata = dict(map(lambda kv: (int(kv[0]), (kv[1][0], kv[1][1])), json.load(f).items()))
+
+        # Reading in the data admission policies from the initialization directory
+        data_admission_policies_dir = "{}DAPs/".format(init_dir)
+        assert os.path.isdir(data_admission_policies_dir), \
+            "Was not able to find the data admission policies directory at: {}".format(data_admission_policies_dir)
+        # Iterate through the files in the DAPs directory
+        for f in os.listdir(data_admission_policies_dir):
+            file_name, extension = f.split('.')
+            assert extension == "json", "Was expecting file name of TIER_TYPE_DAP.json format, got: {}".format(f)
+
+            tier, typ, dap = file_name.split('_')
+            assert dap == "DAP", "Was expecting file name of TIER_TYPE_DAP.json format, got: {}".format(f)
+
+            dap_file_path = "{}{}".format(data_admission_policies_dir, f)
+            if typ == "EAG":
+                data_admission_policies[tier] = EagerDataAdmissionPolicy(init_from_file=dap_file_path)
+            elif typ == "NEV":
+                data_admission_policies[tier] = NeverDataAdmissionPolicy(init_from_file=dap_file_path)
+            elif typ == "2Q":
+                data_admission_policies[tier] = Q2DataAdmissionPolicy(init_from_file=dap_file_path)
+            else:
+                raise ValueError("Unknown data admission policy type: {}".format(typ))
+
+        # Reading in the data eviction policies from the initialization directory
+        data_eviction_policies_dir = "{}DEPs/".format(init_dir)
+        assert os.path.isdir(data_eviction_policies_dir), \
+            "Was not able to find the data eviction policies directory at: {}".format(data_eviction_policies_dir)
+        # Iterate through the files in the DAPs directory
+        for f in os.listdir(data_eviction_policies_dir):
+            file_name, extension = f.split('.')
+            assert extension == "json", "Was expecting file name of TIER_TYPE_DEP.json format, got: {}".format(f)
+
+            tier, typ, dep = file_name.split('_')
+            assert dep == "DEP", "Was expecting file name of TIER_TYPE_DEP.json format, got: {}".format(f)
+
+            dep_file_path = "{}{}".format(data_eviction_policies_dir, f)
+            if typ == "LRU":
+                data_eviction_policies[tier] = LRUEvictionPolicy(init_from_file=dep_file_path)
+            elif typ == "FIFO":
+                data_eviction_policies[tier] = FIFODataEvictionPolicy(init_from_file=dep_file_path)
+            elif typ == "NEV":
+                data_eviction_policies[tier] = NeverDataEvictionPolicy(init_from_file=dep_file_path)
+            else:
+                raise ValueError("Unknown data eviction policy type: {}".format(typ))
+
+        # Reading in the data migration policies from the initialization directory
+        data_migration_policies_dir = "{}DMPs/".format(init_dir)
+        assert os.path.isdir(data_migration_policies_dir), \
+            "Was not able to find the data migration policies directory at: {}".format(data_migration_policies_dir)
+        # Iterate through the files in the DAPs directory
+        for f in os.listdir(data_migration_policies_dir):
+            file_name, extension = f.split('.')
+            assert extension == "json", "Was expecting file name of TIER_TYPE_DMP.json format, got: {}".format(f)
+
+            tenant, typ, dmp = file_name.split('_')
+            assert dmp == "DMP", "Was expecting file name of TIER_TYPE_DMP.json format, got: {}".format(f)
+
+            dmp_file_path = "{}{}".format(data_migration_policies_dir, f)
+            if typ == "PROB":
+                tenant_dmps[int(tenant)] = ProbabilityBasedDataMigrationPolicy(init_from_file=dmp_file_path)
+            else:
+                raise ValueError("Unknown data migration policy type: {}".format(typ))
+
+        # Reading in the SLA policies from the initialization directory
+        tenant_sla_policies_dir = "{}SLAs/".format(init_dir)
+        assert os.path.isdir(tenant_sla_policies_dir), \
+            "Was not able to find the tenant SLA policies directory at: {}".format(tenant_sla_policies_dir)
+        # Iterate through the files in the DAPs directory
+        for f in os.listdir(tenant_sla_policies_dir):
+            file_name, extension = f.split('.')
+            assert extension == "json", "Was expecting file name of TENANT_TYPE_SLA.json format, got: {}".format(f)
+
+            tenant, typ, sla = file_name.split('_')
+            assert sla == "SLA", "Was expecting file name of TENANT_TYPE_SLA.json format, got: {}".format(f)
+
+            sla_file_path = "{}{}".format(tenant_sla_policies_dir, f)
+            if typ == "APWL":
+                tenant_slas[int(tenant)] = AveragingPiecewiseLinearSLAPenaltyFunction(logger=logger, init_from_file=sla_file_path)
+            else:
+                raise ValueError("Unknown tenant SLA policy type: {}".format(typ))
+
+        # Validate the page access sequence file
+        assert os.path.isfile(args.pas_file), "Page access sequence file value must be a valid path. Got: {}".format(args.pas_file)
+
+        # Validate the simulator state dump directory if given
+        assert args.sim_state_dump_dir == None or os.path.isdir(args.sim_state_dump_dir), \
+        "Simulator state dump directory (if given) must be a valid path. Got: {}".format(args.sim_state_dump_dir)
+
+        # Instantiate and return the BP simulator
+        return BufferPoolSimulator(
+            params=storage_tier_params,
+            DAPs=data_admission_policies,
+            DEPs=data_eviction_policies,
+            SLAs=tenant_slas,
+            DMPs=tenant_dmps,
+            metadata=page_metadata,
+            logger=logger)
+
     def sim(self, N, timestamps, pages, tenants, types, output_file=None, from_time=0, to_time=None, warmup=0):
         """
             Processes N samples of the data page access requests.
@@ -434,15 +556,16 @@ if __name__ == "__main__":
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
-    storage_tier_params = {} # Container for all storage tier parameters
-    page_metadata = {} # Start with cold buffer pool
-    data_admission_policies = {}
-    data_eviction_policies = {}
-    tenant_dmps = {}
-    tenant_slas = {}
-
+    cpbpsim = None
     # If initializing from files
     if args.init_dir == None:
+        storage_tier_params = {} # Container for all storage tier parameters
+        page_metadata = {} # Start with cold buffer pool
+        data_admission_policies = {}
+        data_eviction_policies = {}
+        tenant_dmps = {}
+        tenant_slas = {}
+
         # Read in and validate storage tier parameters
         assert os.path.isfile(args.tier_params), "Storage tier parameters file value must be a valid path. Got: {}".format(args.tier_params)
         with open(args.tier_params) as f:
@@ -578,103 +701,19 @@ if __name__ == "__main__":
                     raise ValueError("Unknown DMP type: {}".format(dmp_type))
 
                 dmp = f.readline().strip()
+
+        # Instantiate the BP simulator
+        bpsim = BufferPoolSimulator(
+            params=storage_tier_params,
+            DAPs=data_admission_policies,
+            DEPs=data_eviction_policies,
+            SLAs=tenant_slas,
+            DMPs=tenant_dmps,
+            metadata=page_metadata,
+            logger=logger)
     else:
         # If we're initializing the simulator from the directory of dumped state
-        assert os.path.isdir(args.init_dir), "Given simulator initialization directory is invalid: {}".format(args.init_dir)
-
-        import json
-
-        # Reading in the storage tier parameters from the initialization directory
-        storage_tier_params_file = "{}tier_params.json".format(args.init_dir)
-        assert os.path.isfile(storage_tier_params_file), "Was not able to find the storage tier parameters file at: {}".format(storage_tier_params_file)
-        with open(storage_tier_params_file) as f:
-            storage_tier_params = json.load(f)
-
-        # Reading in the page metadata from the initialization directory
-        page_metadata_file = "{}tier_metadata.json".format(args.init_dir)
-        assert os.path.isfile(page_metadata_file), "Was not able to find the storage tier metadata file at: {}".format(page_metadata_file)
-        with open(page_metadata_file) as f:
-            page_metadata = dict(map(lambda kv: (int(kv[0]), (kv[1][0], kv[1][1])), json.load(f).items()))
-
-        # Reading in the data admission policies from the initialization directory
-        data_admission_policies_dir = "{}DAPs/".format(args.init_dir)
-        assert os.path.isdir(data_admission_policies_dir), \
-            "Was not able to find the data admission policies directory at: {}".format(data_admission_policies_dir)
-        # Iterate through the files in the DAPs directory
-        for f in os.listdir(data_admission_policies_dir):
-            file_name, extension = f.split('.')
-            assert extension == "json", "Was expecting file name of TIER_TYPE_DAP.json format, got: {}".format(f)
-
-            tier, typ, dap = file_name.split('_')
-            assert dap == "DAP", "Was expecting file name of TIER_TYPE_DAP.json format, got: {}".format(f)
-
-            dap_file_path = "{}{}".format(data_admission_policies_dir, f)
-            if typ == "EAG":
-                data_admission_policies[tier] = EagerDataAdmissionPolicy(init_from_file=dap_file_path)
-            elif typ == "NEV":
-                data_admission_policies[tier] = NeverDataAdmissionPolicy(init_from_file=dap_file_path)
-            elif typ == "2Q":
-                data_admission_policies[tier] = Q2DataAdmissionPolicy(init_from_file=dap_file_path)
-            else:
-                raise ValueError("Unknown data admission policy type: {}".format(typ))
-
-        # Reading in the data eviction policies from the initialization directory
-        data_eviction_policies_dir = "{}DEPs/".format(args.init_dir)
-        assert os.path.isdir(data_eviction_policies_dir), \
-            "Was not able to find the data eviction policies directory at: {}".format(data_eviction_policies_dir)
-        # Iterate through the files in the DAPs directory
-        for f in os.listdir(data_eviction_policies_dir):
-            file_name, extension = f.split('.')
-            assert extension == "json", "Was expecting file name of TIER_TYPE_DEP.json format, got: {}".format(f)
-
-            tier, typ, dep = file_name.split('_')
-            assert dep == "DEP", "Was expecting file name of TIER_TYPE_DEP.json format, got: {}".format(f)
-
-            dep_file_path = "{}{}".format(data_eviction_policies_dir, f)
-            if typ == "LRU":
-                data_eviction_policies[tier] = LRUEvictionPolicy(init_from_file=dep_file_path)
-            elif typ == "FIFO":
-                data_eviction_policies[tier] = FIFODataEvictionPolicy(init_from_file=dep_file_path)
-            elif typ == "NEV":
-                data_eviction_policies[tier] = NeverDataEvictionPolicy(init_from_file=dep_file_path)
-            else:
-                raise ValueError("Unknown data eviction policy type: {}".format(typ))
-
-        # Reading in the data migration policies from the initialization directory
-        data_migration_policies_dir = "{}DMPs/".format(args.init_dir)
-        assert os.path.isdir(data_migration_policies_dir), \
-            "Was not able to find the data migration policies directory at: {}".format(data_migration_policies_dir)
-        # Iterate through the files in the DAPs directory
-        for f in os.listdir(data_migration_policies_dir):
-            file_name, extension = f.split('.')
-            assert extension == "json", "Was expecting file name of TIER_TYPE_DMP.json format, got: {}".format(f)
-
-            tenant, typ, dmp = file_name.split('_')
-            assert dmp == "DMP", "Was expecting file name of TIER_TYPE_DMP.json format, got: {}".format(f)
-
-            dmp_file_path = "{}{}".format(data_migration_policies_dir, f)
-            if typ == "PROB":
-                tenant_dmps[int(tenant)] = ProbabilityBasedDataMigrationPolicy(init_from_file=dmp_file_path)
-            else:
-                raise ValueError("Unknown data migration policy type: {}".format(typ))
-
-        # Reading in the SLA policies from the initialization directory
-        tenant_sla_policies_dir = "{}SLAs/".format(args.init_dir)
-        assert os.path.isdir(tenant_sla_policies_dir), \
-            "Was not able to find the tenant SLA policies directory at: {}".format(tenant_sla_policies_dir)
-        # Iterate through the files in the DAPs directory
-        for f in os.listdir(tenant_sla_policies_dir):
-            file_name, extension = f.split('.')
-            assert extension == "json", "Was expecting file name of TENANT_TYPE_SLA.json format, got: {}".format(f)
-
-            tenant, typ, sla = file_name.split('_')
-            assert sla == "SLA", "Was expecting file name of TENANT_TYPE_SLA.json format, got: {}".format(f)
-
-            sla_file_path = "{}{}".format(tenant_sla_policies_dir, f)
-            if typ == "APWL":
-                tenant_slas[int(tenant)] = AveragingPiecewiseLinearSLAPenaltyFunction(logger=logger, init_from_file=sla_file_path)
-            else:
-                raise ValueError("Unknown tenant SLA policy type: {}".format(typ))
+        bpsim = BufferPoolSimulator.init_from_dir(args.init_dir, logger)
 
     # Validate the page access sequence file
     assert os.path.isfile(args.pas_file), "Page access sequence file value must be a valid path. Got: {}".format(args.pas_file)
@@ -682,16 +721,6 @@ if __name__ == "__main__":
     # Validate the simulator state dump directory if given
     assert args.sim_state_dump_dir == None or os.path.isdir(args.sim_state_dump_dir), \
         "Simulator state dump directory (if given) must be a valid path. Got: {}".format(args.sim_state_dump_dir)
-
-    # Instantiate the BP simulator
-    bpsim = BufferPoolSimulator(
-        params=storage_tier_params,
-        DAPs=data_admission_policies,
-        DEPs=data_eviction_policies,
-        SLAs=tenant_slas,
-        DMPs=tenant_dmps,
-        metadata=page_metadata,
-        logger=logger)
 
     # Read in the page access requests
     N, timestamps, pages, tenants, types = 0, [], [], [], []
