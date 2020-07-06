@@ -184,6 +184,36 @@ class FIFODataEvictionPolicy(AbstractDataEvictionPolicy):
     def __repr__(self):
         return str(self)
 
+class NeverDataEvictionPolicy(AbstractDataEvictionPolicy):
+    """Data eviction policy which is never expected to actually evict anything."""
+
+    def __init__(self, storage_params=None, config_params=None, init_from_file=None):
+        """Do nothing here."""
+        pass
+
+    def record_access(self, timestamp, pageID, resident, type=None):
+        """Do nothing here."""
+        pass
+
+    def evict(self):
+        """This method is not expected to ever be called."""
+        raise RuntimeError("evict method of NeverDataEvictionPolicy must never be called.")
+
+    def update_residency(self, pageID, resident):
+        """Do nothing here."""
+        pass
+
+    def persist_to_file(self, file_name):
+        """Just create/open a file, but don't actually write anything to it"""
+        with open(file_name, 'w') as f:
+            pass
+
+    def __str__(self):
+        return "NeverDataEvictionPolicy"
+
+    def __repr__(self):
+        return str(self)
+
 if __name__ == "__main__":
     # Testing Space
     """

@@ -7,7 +7,7 @@ from datetime import datetime
 from cpbpsim.slas.sla_penalty_function import AbstractSLAPenaltyFunction, AveragingPiecewiseLinearSLAPenaltyFunction
 from cpbpsim.data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy
 from cpbpsim.data_admission_policy.data_admission_policy import AbstractDataAdmissionPolicy, EagerDataAdmissionPolicy, NeverDataAdmissionPolicy, Q2DataAdmissionPolicy
-from cpbpsim.data_eviction_policy.data_eviction_policy import AbstractDataEvictionPolicy, FIFODataEvictionPolicy, LRUEvictionPolicy
+from cpbpsim.data_eviction_policy.data_eviction_policy import AbstractDataEvictionPolicy, FIFODataEvictionPolicy, LRUEvictionPolicy, NeverDataEvictionPolicy
 from cpbpsim.monitoring.monitoring import TenantMetricsMonitor
 
 class BufferPoolSimulator():
@@ -292,6 +292,8 @@ class BufferPoolSimulator():
                 typ = "LRU"
             elif isinstance(self.DEPs[dep], FIFODataEvictionPolicy):
                 typ = "FIFO"
+            elif isinstance(self.DEPs[dep], NeverDataEvictionPolicy):
+                typ = "NEV"
             else:
                 raise ValueError("Unknown data eviction policy name: {}".format(self.DEPs[dep]))
 
@@ -496,6 +498,8 @@ if __name__ == "__main__":
                     data_eviction_policies[tier] = LRUEvictionPolicy()
                 elif policy == "FIFO":
                     data_eviction_policies[tier] = FIFODataEvictionPolicy()
+                elif policy == "NEV":
+                    data_eviction_policies[tier] = NeverDataEvictionPolicy()
                 else:
                     raise ValueError("Unknown data eviction policy type: {}".format(policy))
 
@@ -631,6 +635,8 @@ if __name__ == "__main__":
                 data_eviction_policies[tier] = LRUEvictionPolicy(init_from_file=dep_file_path)
             elif typ == "FIFO":
                 data_eviction_policies[tier] = FIFODataEvictionPolicy(init_from_file=dep_file_path)
+            elif typ == "NEV":
+                data_eviction_policies[tier] = NeverDataEvictionPolicy(init_from_file=dep_file_path)
             else:
                 raise ValueError("Unknown data eviction policy type: {}".format(typ))
 
