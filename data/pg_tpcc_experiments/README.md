@@ -1,4 +1,4 @@
-# HardBD&Active 2020 Experimentation Notebook
+# PostgreSQL & TPC-C Experimentation Notebook
 
 ## Common Parameters
 

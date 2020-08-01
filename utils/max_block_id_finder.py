@@ -1,6 +1,7 @@
 import os
 
 max_block_id = 0
+unique_block_count = 0
 
 rel_forks_count = 0
 rel_forks = {}
@@ -29,15 +30,20 @@ for file_name in list(sorted(os.listdir("/media/pg_data_ssd/6hour_tpcc_pg_logs/"
 
                     if rel_fork not in rel_forks:
                         rel_forks_count += 1
-                        rel_forks[rel_fork] = rel_forks_count
+                        rel_forks[rel_fork] = set()
+
+                    if block_id not in rel_forks[rel_fork]:
+                        rel_forks[rel_fork].add(block_id)
+                        unique_block_count += 1
 
             records_counter += 1
-            if records_counter == 1000:
+            if records_counter == 10000:
                 records_counter = 0
                 print("\rProgress: {:6.2f}%".format(100 * file.tell() / file_size), end='')
 
             log_line = file.readline().strip()
-    print()
+    print("Progress: 100%")
 
 print("Max Block ID: {}".format(max_block_id))
+print("Unique Block Count: {}".format(unique_block_count))
 print("Unique Rel Forks Count: {}".format(rel_forks_count))
