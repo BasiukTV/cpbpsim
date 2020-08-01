@@ -95,7 +95,7 @@ $ time python3 cpbpsim/bp_simulator.py \
     --tier-deps data/pg_tpcc_experiments/simulator_init/tier_deps.csv \
     --tenant-slas data/pg_tpcc_experiments/simulator_init/tenant_slas.csv \
     --tenant-dmps data/pg_tpcc_experiments/simulator_init/tenant_dmps.csv \
-    --pas-file data/harddb_active_experiments/page_access_sequence.csv \
+    --pas-file data/pg_tpcc_experiments/pas_4hour_24steps.csv \
     --warmup 1800000 \
     --log-file data/pg_tpcc_experiments/logs/run1.log \
     --log-level INFO \
