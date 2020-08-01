@@ -20,7 +20,7 @@
 ## Remote PostgreSQL Connection
 * [Configure PostgreSQL to Accept Remote Connections](https://blog.bigbinary.com/2016/01/23/configure-postgresql-to-allow-remote-connection.html)
 * [Setting Admin User Password](https://stackoverflow.com/questions/7695962/postgresql-password-authentication-failed-for-user-postgres)
-    + `ALTER USER postgres PASSWORD 'Redsentrycrab14';`
+    + `ALTER USER postgres PASSWORD 'postgres_password';`
 * [PGAdmin Console](https://www.pgadmin.org/) used to connect to the database.
 
 ## Setting Up Tenant Databases
