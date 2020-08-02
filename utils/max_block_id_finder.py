@@ -42,7 +42,7 @@ for file_name in list(sorted(os.listdir("/media/pg_data_ssd/6hour_tpcc_pg_logs/"
                 print("\rProgress: {:6.2f}%".format(100 * file.tell() / file_size), end='')
 
             log_line = file.readline().strip()
-    print("Progress: 100%")
+    print("\nProgress: 100%")
 
 print("Max Block ID: {}".format(max_block_id))
 print("Unique Block Count: {}".format(unique_block_count))

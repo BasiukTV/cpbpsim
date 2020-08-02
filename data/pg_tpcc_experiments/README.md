@@ -5,13 +5,14 @@
 ### Storage Tier Parameters
 
 #### Explanation
-* Assuming 32KB page size - 2GB worth of RAM, 20GB NVM, 2000GB of SSD.
+* Assuming 32KB page size - 2GB worth of RAM, 10GB NVM, 2000GB of SSD.
+* 6 Hour, 12 Tenant experiment referenced 802776 unique page IDs, which is approx 25.5GB of data footprint.
 
 #### CSV file contents
 ```
 name,free_space,CPU_access,type1,SLO1,cost1,type2,SLO2,cost2,type3,SLO3,cost3
 SSD,65536000,False,read,latency,300000,update,latency,300000,copy,latency,300000
-NVM,655360,True,read,latency,20,update,latency,50,copy,latency,50
+NVM,327680,True,read,latency,20,update,latency,50,copy,latency,50
 RAM,65536,True,read,latency,10,update,latency,10,copy,latency,10
 ```
 
@@ -95,12 +96,12 @@ $ time python3 cpbpsim/bp_simulator.py \
     --tier-deps data/pg_tpcc_experiments/simulator_init/tier_deps.csv \
     --tenant-slas data/pg_tpcc_experiments/simulator_init/tenant_slas.csv \
     --tenant-dmps data/pg_tpcc_experiments/simulator_init/tenant_dmps.csv \
-    --pas-file data/pg_tpcc_experiments/pas_4hour_24steps.csv \
+    --pas-file ../6hours_12steps/pas.csv \
     --warmup 1800000 \
-    --log-file data/pg_tpcc_experiments/logs/run1.log \
+    --log-file ../6hours_12steps/cpbpsim/logs/run1.log \
     --log-level INFO \
-    --output-file data/pg_tpcc_experiments/pg_tpcc_experiments_result.csv \
-    --sim-state-dump-dir data/sim_state_dump/
+    --output-file ../6hours_12steps/cpbpsim/results/result1.csv \
+    --sim-state-dump-dir ../6hours_12steps/cpbpsim/state_dumps/
 ```
 
 #### Simulation Results

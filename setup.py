@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='cpbpsim',
-      version='1.2.6',
+      version='1.2.7',
       description='A Persistent Memory-Aware Buffer Pool Manager Simulator for Multi-Tenant Cloud Databases.',
       author='Taras Basiuk',
       author_email='BasiukTV@gmail.com',

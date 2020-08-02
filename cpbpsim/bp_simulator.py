@@ -4,11 +4,18 @@ import os, logging
 from collections import deque
 from datetime import datetime
 
-from cpbpsim.slas.sla_penalty_function import AbstractSLAPenaltyFunction, AveragingPiecewiseLinearSLAPenaltyFunction
-from cpbpsim.data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy
-from cpbpsim.data_admission_policy.data_admission_policy import AbstractDataAdmissionPolicy, EagerDataAdmissionPolicy, NeverDataAdmissionPolicy, Q2DataAdmissionPolicy
-from cpbpsim.data_eviction_policy.data_eviction_policy import AbstractDataEvictionPolicy, FIFODataEvictionPolicy, LRUEvictionPolicy, NeverDataEvictionPolicy
-from cpbpsim.monitoring.monitoring import TenantMetricsMonitor
+try: # Imports when the tool run by itself
+    from slas.sla_penalty_function import AbstractSLAPenaltyFunction, AveragingPiecewiseLinearSLAPenaltyFunction
+    from data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy
+    from data_admission_policy.data_admission_policy import AbstractDataAdmissionPolicy, EagerDataAdmissionPolicy, NeverDataAdmissionPolicy, Q2DataAdmissionPolicy
+    from data_eviction_policy.data_eviction_policy import AbstractDataEvictionPolicy, FIFODataEvictionPolicy, LRUEvictionPolicy, NeverDataEvictionPolicy
+    from monitoring.monitoring import TenantMetricsMonitor
+except ImportError: # Import when the tool is used as a dependency
+    from cpbpsim.slas.sla_penalty_function import AbstractSLAPenaltyFunction, AveragingPiecewiseLinearSLAPenaltyFunction
+    from cpbpsim.data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy
+    from cpbpsim.data_admission_policy.data_admission_policy import AbstractDataAdmissionPolicy, EagerDataAdmissionPolicy, NeverDataAdmissionPolicy, Q2DataAdmissionPolicy
+    from cpbpsim.data_eviction_policy.data_eviction_policy import AbstractDataEvictionPolicy, FIFODataEvictionPolicy, LRUEvictionPolicy, NeverDataEvictionPolicy
+    from cpbpsim.monitoring.monitoring import TenantMetricsMonitor
 
 class BufferPoolSimulator():
 
