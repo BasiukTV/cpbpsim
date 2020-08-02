@@ -740,6 +740,10 @@ if __name__ == "__main__":
                 tenants.append(tenant)
                 types.append(typ)
 
+            # Stop processing the file one the to_time timestamps is reached
+            if timestamp > args.to_time:
+                break
+
             page_access_request = f.readline().strip()
 
     # Run the simulation
