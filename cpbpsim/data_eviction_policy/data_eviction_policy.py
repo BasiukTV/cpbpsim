@@ -97,7 +97,7 @@ class LRUEvictionPolicy(AbstractDataEvictionPolicy):
     def update_residency(self, pageID, resident):
         # If the page is not yet a resident, add add it the priority queue
         if pageID not in self.page_residency and resident:
-            heappush(self.priority_queue, (self.last_page_reference[pageID], pageID))
+            heappush(self.priority_queue, (self.last_page_reference[pageID] if pageID in self.last_page_reference else 0, pageID))
             self.page_residency.add(pageID)
         # If the page is already a resident remove it from residency
         elif pageID in self.page_residency and not resident:

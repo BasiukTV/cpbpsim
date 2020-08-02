@@ -253,7 +253,7 @@ class BufferPoolSimulator():
         for i in range(N):
 
             if (i + 1) > N * progress_percentile:
-                logger.info("Processed {} records. Or at least: {}%".format(i + 1, int(progress_percentile * 100)))
+                logger.info("Processed {} requests. Or at least: {}%".format(i + 1, int(progress_percentile * 100)))
                 progress_percentile = progress_percentile + 0.05
 
             time, pageID, tenantID, access_type = timestamps[i], pages[i], tenants[i], types[i]
@@ -286,13 +286,23 @@ class BufferPoolSimulator():
                 new_tier = self.DMPs[tenantID].destination_on_admission_from(time, pageID, tier)
                 while not self.params[new_tier]["CPU_access"]:
                     new_tier = self.DMPs[tenantID].destination_on_admission_from(time, pageID, new_tier)
+
+                # This is the final part of the chain, actually servicing the request
                 data_access_chain.appendleft((pageID, new_tier, access_type))
+
+                # Before we can service the page we need to read it from its source tier
+                # and copy it over to it's new destination tier
+                data_access_chain.appendleft((pageID, new_tier, "copy"))
+                data_access_chain.appendleft((pageID, tier, "read"))
+
                 logger.debug("pageID:{} will be admitted from {} to {} tier per DMP of tenantID:{}".format(
                     pageID, tier, new_tier, tenantID))
 
-                # Remove the page from th residency with the DEP in the old tier
+                # Remove the page from the residency with the DEP in the old tier
                 self.DEPs[tier].update_residency(pageID, False)
-                self.params[tier]["free_space"] = self.params[tier]["free_space"] + 1
+                if tier != "SSD":
+                    self.params[tier]["free_space"] = self.params[tier]["free_space"] + 1
+                    logger.debug("{} tier remaining free space: {}".format(tier, self.params[tier]["free_space"]))
 
                 # Make sure the new tier has enough free space
                 victim_page = pageID
@@ -309,12 +319,16 @@ class BufferPoolSimulator():
                         logger.debug("pageID:{} dirty:{} will be copied from {} to {} tier to make space for pageID:{}".format(
                             victim_page, self.metadata[victim_page][1], old_tier, new_tier, old_victim_page))
                         if not self.metadata[victim_page][1] and new_tier == "SSD":
-                            # If the page is not dirty and the destination tier is "SSD", just update the metadata
+                            # If the victim page is not dirty and the destination tier is "SSD",
+                            # just update the metadata to point to its new location,
+                            # But we don't need to copy it over as SSD already contains its clean copy
                             self.metadata[victim_page] = ("SSD", False)
                             break
                         else:
-                            # Victim page has to be migrated somewhere else
+                            # Victim page has to actually be migrated, first we read it from it's old tier
+                            # and then copy it over to its new tier
                             data_access_chain.appendleft((victim_page, new_tier, "copy"))
+                            data_access_chain.appendleft((victim_page, old_tier, "read"))
 
             # Process the data access chain
             logger.debug("Page access request #{} data access chain: {}".format(i + 1, data_access_chain))
@@ -325,12 +339,7 @@ class BufferPoolSimulator():
                 if time >= warmup:
                     slo_val += self.params[d_tier]["SLO_costs"][d_access_type][self.SLAs[tenantID].slo_type]
                 if d_access_type == "copy":
-                    # If the page was copied over, we need to add the slo cost of reading the page as well
-                    s_pageID, s_tier, s_access_type = data_access_chain[j + 1]
-                    if time >= warmup:
-                        slo_val += self.params[s_tier]["SLO_costs"]["read"][self.SLAs[tenantID].slo_type]
-
-                    # When the page is copied it has to become a resident of the destination storage tier
+                    # When the page is copied over it has to become a resident of the destination storage tier
                     # For non-copy accesses page will become resident through record_access method with resident=True
                     self.DEPs[d_tier].update_residency(d_pageID, True)
 
