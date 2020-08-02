@@ -248,8 +248,14 @@ class BufferPoolSimulator():
         assert to_time == None or (isinstance(to_time, int) and to_time >= from_time), \
             "to_time, if given, must be a non-negative integer and no less than from_time. Got: {}".format(to_time)
 
-        logger.info("Starting the simulation.")
+        logger.info("Starting the simulation. Number of requests to process: {}".format(N))
+        progress_percentile = 0.05
         for i in range(N):
+
+            if (i + 1) > N * progress_percentile:
+                logger.info("Processed {} records. Or at least: {}%".format(i + 1, int(progress_percentile * 100)))
+                progress_percentile = progress_percentile + 0.05
+
             time, pageID, tenantID, access_type = timestamps[i], pages[i], tenants[i], types[i]
 
             # Skip the request if its timestamp is below from_time or above to_time
@@ -725,9 +731,39 @@ if __name__ == "__main__":
     # Read in the page access requests
     N, timestamps, pages, tenants, types = 0, [], [], [], []
     with open(args.pas_file) as f:
-        f.readline() # Skip the headers line
 
-        page_access_request = f.readline().strip()
+        file_size = os.path.getsize(args.pas_file)
+
+        # If we have to start with the timestamp more than a minute away and the file is larger than 100MB, we should quickly seek to it
+        page_access_request = None
+        if args.from_time > 60000 and file_size > 100 * 1024 * 1024:
+
+            seek_to = file_size // 2
+            seek_step = seek_to // 2
+            f.seek(seek_to)
+            f.readline() # Assuming we landed in the middle of some line, get to the end of it
+            page_access_request = f.readline().strip() # Read the first normal line
+            timestamp = int(page_access_request.split(',')[0])
+
+            # We need to land withing a minute of from_time but no longer than that
+            while not (timestamp <= args.from_time and timestamp + 60000 >= args.from_time):
+                if timestamp <= args.from_time:
+                    # We didn't go far enough
+                    seek_to += seek_step
+                else:
+                    # We overshot, need to back-off a bit
+                    seek_to -= seek_step
+
+                seek_step = seek_step // 2
+                f.seek(seek_to)
+                f.readline()
+                page_access_request = f.readline().strip()
+                timestamp = int(page_access_request.split(',')[0])
+
+        else:
+            f.readline() # Otherwise, just skip the headers line
+            page_access_request = f.readline().strip()
+
         while page_access_request:
             timestamp, page, tenant, typ = page_access_request.split(',')
             timestamp, page, tenant = int(timestamp), int(page), int(tenant)
@@ -740,8 +776,8 @@ if __name__ == "__main__":
                 tenants.append(tenant)
                 types.append(typ)
 
-            # Stop processing the file one the to_time timestamps is reached
-            if timestamp > args.to_time:
+            # Stop processing the file once the to_time timestamps is reached
+            if args.to_time != None and timestamp > args.to_time:
                 break
 
             page_access_request = f.readline().strip()
