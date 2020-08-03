@@ -186,6 +186,8 @@ class BufferPoolSimulator():
             dmp_file_path = "{}{}".format(data_migration_policies_dir, f)
             if typ == "PROB":
                 tenant_dmps[int(tenant)] = ProbabilityBasedDataMigrationPolicy(init_from_file=dmp_file_path)
+            if typ == "NAI":
+                tenant_dmps[int(tenant)] = NaiveDataMigrationPolicy(init_from_file=dmp_file_path)
             else:
                 raise ValueError("Unknown data migration policy type: {}".format(typ))
 
