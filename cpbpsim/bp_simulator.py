@@ -6,13 +6,13 @@ from datetime import datetime
 
 try: # Imports when the tool run by itself
     from slas.sla_penalty_function import AbstractSLAPenaltyFunction, AveragingPiecewiseLinearSLAPenaltyFunction
-    from data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy, NaiveDataMigrationPolicy
+    from data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy, NaiveDataMigrationPolicy, ThreeTierBufferDataMigrationPolicy
     from data_admission_policy.data_admission_policy import AbstractDataAdmissionPolicy, EagerDataAdmissionPolicy, NeverDataAdmissionPolicy, Q2DataAdmissionPolicy
     from data_eviction_policy.data_eviction_policy import AbstractDataEvictionPolicy, FIFODataEvictionPolicy, LRUEvictionPolicy, NeverDataEvictionPolicy
     from monitoring.monitoring import TenantMetricsMonitor
 except ImportError: # Import when the tool is used as a dependency
     from cpbpsim.slas.sla_penalty_function import AbstractSLAPenaltyFunction, AveragingPiecewiseLinearSLAPenaltyFunction
-    from cpbpsim.data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy, NaiveDataMigrationPolicy
+    from cpbpsim.data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy, NaiveDataMigrationPolicy, ThreeTierBufferDataMigrationPolicy
     from cpbpsim.data_admission_policy.data_admission_policy import AbstractDataAdmissionPolicy, EagerDataAdmissionPolicy, NeverDataAdmissionPolicy, Q2DataAdmissionPolicy
     from cpbpsim.data_eviction_policy.data_eviction_policy import AbstractDataEvictionPolicy, FIFODataEvictionPolicy, LRUEvictionPolicy, NeverDataEvictionPolicy
     from cpbpsim.monitoring.monitoring import TenantMetricsMonitor
@@ -188,6 +188,8 @@ class BufferPoolSimulator():
                 tenant_dmps[int(tenant)] = ProbabilityBasedDataMigrationPolicy(init_from_file=dmp_file_path)
             if typ == "NAI":
                 tenant_dmps[int(tenant)] = NaiveDataMigrationPolicy(init_from_file=dmp_file_path)
+            if typ == "3TB":
+                tenant_dmps[int(tenant)] = ThreeTierBufferDataMigrationPolicy(init_from_file=dmp_file_path)
             else:
                 raise ValueError("Unknown data migration policy type: {}".format(typ))
 
@@ -448,6 +450,8 @@ class BufferPoolSimulator():
                 typ = "PROB"
             if isinstance(self.DMPs[dmp], NaiveDataMigrationPolicy):
                 typ = "NAI"
+            if isinstance(self.DMPs[dmp], ThreeTierBufferDataMigrationPolicy):
+                typ = "3TB"
             else:
                 raise ValueError("Unknown data migration policy name: {}".format(self.DMPs[dmp]))
 
@@ -718,6 +722,8 @@ if __name__ == "__main__":
                         {"tiers" : dmp_tiers, "data_admission_matrix" : admission_matrix, "data_eviction_matrix" : eviction_matrix})
                 elif dmp_type == "NAI":
                     raise ValueError("NaiveDataMigrationPolicy instantiation from the CLI is not supported yet.")
+                elif dmp_type == "3TB":
+                    raise ValueError("ThreeTierBufferDataMigrationPolicy instantiation from the CLI is not supported yet.")
                 else:
                     raise ValueError("Unknown DMP type: {}".format(dmp_type))
 

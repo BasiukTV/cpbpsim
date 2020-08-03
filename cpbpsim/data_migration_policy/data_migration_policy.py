@@ -67,6 +67,59 @@ class NaiveDataMigrationPolicy(AbstractDataMigrationPolicy):
         with open(file_name, 'w') as _:
             pass
 
+class ThreeTierBufferDataMigrationPolicy(AbstractDataMigrationPolicy):
+    """
+        This policy acts like naive DMP for admissions.
+
+        But, upon the every first eviction from RAM page is migrated to SSD, but it's ID is recorded.
+        Upon the every second eviction from RAM page is migrated to NVM and it's ID record cleared.
+        Upon eviction from NVM the page is always migrated to SSD.
+    """
+
+    def __init__(self, config_params=None, init_from_file=None):
+        """This constructor initializes a set to record page IDs."""
+
+        self.record = set()
+
+        if init_from_file:
+            # If the file is given, simply populate the record set with its contents.
+            import json
+            with open(init_from_file) as f:
+                self.record = set(json.load(f))
+
+    def destination_on_admission_from(self, timestamp, pageID, source):
+        """If source is SSD return NVM, if source is NVM return RAM."""
+        if source == "SSD":
+            return "NVM"
+        elif source == "NVM":
+            return "RAM"
+        elif source == "RAM":
+            return "RAM"
+        else:
+            raise ValueError("Unexpected source data tier: {}".format(source))
+
+    def destination_on_eviction_from(self, timestamp, pageID, source):
+        """If source is NVM return SSD, if source is RAM return NVM."""
+        if source == "SSD":
+            return "SSD"
+        elif source == "NVM":
+            return "SSD"
+        elif source == "RAM":
+            if pageID in self.record:
+                self.record.remove(pageID)
+                return "NVM"
+            else:
+                self.record.add(pageID)
+                return "SSD"
+        else:
+            raise ValueError("Unexpected source data tier: {}".format(source))
+
+    def persist_to_file(self, file_name):
+        """Just save the record of Page IDs to a given file."""
+        import json
+        with open(file_name, 'w') as f:
+            json.dump(list(self.record), f)
+
 class ProbabilityBasedDataMigrationPolicy(AbstractDataMigrationPolicy):
     """
         This data migration policy determines the data page destination according to the preset probabilities
@@ -189,6 +242,16 @@ if __name__ == "__main__":
     bps.persist_to_file('test.json')
     bps = ProbabilityBasedDataMigrationPolicy(init_from_file='test.json')
     print(bps)
+    
+    ttbdmp = ThreeTierBufferDataMigrationPolicy()
+    print(ttbdmp.destination_on_eviction_from(0, 1, "RAM"))
+    print(ttbdmp.destination_on_eviction_from(0, 1, "RAM"))
+    print(ttbdmp.destination_on_eviction_from(0, 2, "RAM"))
+    print(ttbdmp.destination_on_eviction_from(0, 3, "RAM"))
+    ttbdmp.persist_to_file('test.json')
+    ttbdmp = ThreeTierBufferDataMigrationPolicy(init_from_file='test.json')
+    print(ttbdmp.destination_on_eviction_from(0, 1, "RAM"))
+    print(ttbdmp.destination_on_eviction_from(0, 2, "RAM"))
     """
 
     # Parse given arguments
