@@ -6,13 +6,13 @@ from datetime import datetime
 
 try: # Imports when the tool run by itself
     from slas.sla_penalty_function import AbstractSLAPenaltyFunction, AveragingPiecewiseLinearSLAPenaltyFunction
-    from data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy
+    from data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy, NaiveDataMigrationPolicy
     from data_admission_policy.data_admission_policy import AbstractDataAdmissionPolicy, EagerDataAdmissionPolicy, NeverDataAdmissionPolicy, Q2DataAdmissionPolicy
     from data_eviction_policy.data_eviction_policy import AbstractDataEvictionPolicy, FIFODataEvictionPolicy, LRUEvictionPolicy, NeverDataEvictionPolicy
     from monitoring.monitoring import TenantMetricsMonitor
 except ImportError: # Import when the tool is used as a dependency
     from cpbpsim.slas.sla_penalty_function import AbstractSLAPenaltyFunction, AveragingPiecewiseLinearSLAPenaltyFunction
-    from cpbpsim.data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy
+    from cpbpsim.data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy, NaiveDataMigrationPolicy
     from cpbpsim.data_admission_policy.data_admission_policy import AbstractDataAdmissionPolicy, EagerDataAdmissionPolicy, NeverDataAdmissionPolicy, Q2DataAdmissionPolicy
     from cpbpsim.data_eviction_policy.data_eviction_policy import AbstractDataEvictionPolicy, FIFODataEvictionPolicy, LRUEvictionPolicy, NeverDataEvictionPolicy
     from cpbpsim.monitoring.monitoring import TenantMetricsMonitor
@@ -444,6 +444,8 @@ class BufferPoolSimulator():
             typ = None
             if isinstance(self.DMPs[dmp], ProbabilityBasedDataMigrationPolicy):
                 typ = "PROB"
+            if isinstance(self.DMPs[dmp], NaiveDataMigrationPolicy):
+                typ = "NAI"
             else:
                 raise ValueError("Unknown data migration policy name: {}".format(self.DMPs[dmp]))
 
@@ -712,6 +714,8 @@ if __name__ == "__main__":
                     # Instantiate ProbabilityBasedDataMigrationPolicy
                     tenant_dmps[tenant_id] = ProbabilityBasedDataMigrationPolicy(
                         {"tiers" : dmp_tiers, "data_admission_matrix" : admission_matrix, "data_eviction_matrix" : eviction_matrix})
+                elif dmp_type == "NAI":
+                    raise ValueError("NaiveDataMigrationPolicy instantiation from the CLI is not supported yet.")
                 else:
                     raise ValueError("Unknown DMP type: {}".format(dmp_type))
 

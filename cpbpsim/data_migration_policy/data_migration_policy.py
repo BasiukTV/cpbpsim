@@ -29,6 +29,44 @@ class AbstractDataMigrationPolicy(ABC):
         """Persists the state of the policy to a file, from which it can be later recovered."""
         pass
 
+class NaiveDataMigrationPolicy(AbstractDataMigrationPolicy):
+    """
+        This policy simply admits data from SSD to NVM and then to RAM,
+        and it evicts data from RAM to NVM and then to RAM.
+    """
+
+    def __init__(self, config_params=None, init_from_file=None):
+        """If init_from_file is give, check that it exists, but that's it."""
+        with open(init_from_file) as _:
+            pass
+
+    def destination_on_admission_from(self, timestamp, pageID, source):
+        """If source is SSD return NVM, if source is NVM return RAM."""
+        if source == "SSD":
+            return "NVM"
+        elif source == "NVM":
+            return "RAM"
+        elif source == "RAM":
+            return "RAM"
+        else:
+            raise ValueError("Unexpected source data tier: {}".format(source))
+
+    def destination_on_eviction_from(self, timestamp, pageID, source):
+        """If source is NVM return SSD, if source is RAM return NVM."""
+        if source == "SSD":
+            return "SSD"
+        elif source == "NVM":
+            return "SSD"
+        elif source == "RAM":
+            return "NVM"
+        else:
+            raise ValueError("Unexpected source data tier: {}".format(source))
+
+    def persist_to_file(self, file_name):
+        """Just make an empty file, there's nothing else to persist."""
+        with open(file_name, 'w') as _:
+            pass
+
 class ProbabilityBasedDataMigrationPolicy(AbstractDataMigrationPolicy):
     """
         This data migration policy determines the data page destination according to the preset probabilities
