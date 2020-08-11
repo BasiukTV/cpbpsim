@@ -1,12 +1,18 @@
-## PostgreSQL Installation From Source Code
+## PostgreSQL Installation From Source Code on Remote Ubuntu 18.04 host
 * [Requirements](https://www.postgresql.org/docs/current/install-requirements.html)
+    + `sudo apt-get update`
     + `sudo apt install make`
     + `sudo apt install gcc`
     + `sudo apt install libreadline-dev libreadline7`
-    + `sudo apt-get install zlib1g-dev`
+    + `sudo apt install zlib1g-dev`
 * [Getting the Source](https://www.postgresql.org/docs/current/install-getsource.html)
+    + `sudo wget  https://ftp.postgresql.org/pub/source/v12.3/postgresql-12.3.tar.gz`
+    + `tar -xvzf postgresql-12.3.tar.gz`
+* Make required sourcecode changes to collect the traces now
 * [Installation Procedure](https://www.postgresql.org/docs/current/install-procedure.html)
-    + To config use: './configure --with-blocksize=32 --with-wal-blocksize=64'
+    + './configure --enable-debug'
+    + `make`
+    + `sudo make install`
 
 ## Starting the PostgreSQL Server
 * [PostgreSQL User Account](https://www.postgresql.org/docs/current/postgres-user.html)
@@ -45,8 +51,15 @@
     + `./oltpbenchmark -b tpcc -c cpbptun_experiments/t1_flat.xml --execute=true -s 10 -o tpcc1_postgres_result </dev/null &>/dev/null &`
     + `disown`
 
-## Some Azure Stuff
+## Some Remote Host Management Stuff
+* Cheking disks, their mountpoints and free space
+    + `df -h` or `lsblk`
 * [Mounting Disks](https://unix.stackexchange.com/questions/315063/mount-wrong-fs-type-bad-option-bad-superblock#315070)
+* System Load Monitoring
+    + `sudo apt install glances`
+    + `glances`
 * Granting access to folders
     + `sudo chmod -R a+rwx /path/to/folder/`
+* Searching for suitable apt packages
+    + `apt-cache search keyword`
 
