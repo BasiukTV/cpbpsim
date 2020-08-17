@@ -79,3 +79,4 @@
     + `apt-cache search keyword`
 * Manupilating many files at once
     + Renaming example: `for file in *100.xml; do mv "$file" "${file/100/40}"; done`
+    + Find and Replace: `sed -i 's/<time>900</<time>1800</g' *.xml`
