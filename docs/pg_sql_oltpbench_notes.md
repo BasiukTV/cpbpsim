@@ -64,9 +64,10 @@
     
 ## PostgreSQL Logs Processing
 * Modify this [tool](../utils/pg_logs_to_pas_conv.py) to convert PostgreSQL logs into PAS file.
+* Modify this [tool](../utils/pg_logs_analyzer.py) to get the some data exploration analysis of the PostgreSQL logs.
 
 ## Some Remote Host Management Stuff
-* Cheking disks, their mountpoints and free space
+* Checking disks, their mountpoints and free space
     + `df -h` or `lsblk`
 * [Mounting Disks](https://unix.stackexchange.com/questions/315063/mount-wrong-fs-type-bad-option-bad-superblock#315070)
 * System Load Monitoring
