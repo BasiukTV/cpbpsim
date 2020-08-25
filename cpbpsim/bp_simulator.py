@@ -19,11 +19,11 @@ except ImportError: # Import when the tool is used as a dependency
 
 class BufferPoolSimulator():
 
-    def __init__(self, params, DAPs, DEPs, SLAs, DMPs, metadata={}, logger=logging.getLogger(__name__)):
+    def __init__(self, tier_params, DAPs, DEPs, SLAs, DMPs, metadata={}, logger=logging.getLogger(__name__)):
         """
             Constructor for the BufferPoolSimulator.
             Expects:
-                params - storage tier parameters dictionary, having free space, CPU_acess flag, and SLO costs
+                tier_params - storage tier parameters dictionary, having free space, CPU_acess flag, and SLO costs
                 DAPs - storage tier data admission policies
                 DEPs - storage tier data eviction policies
                 SLAs - Tenant service level agreements
@@ -35,34 +35,34 @@ class BufferPoolSimulator():
         # Validate the given parameters
 
         # Validate the storage tier parameters
-        assert isinstance(params, dict), "params must be a dictionary. Got: {}".format(params)
-        for tier in params:
-            assert "free_space" in params[tier] and isinstance(params[tier]["free_space"], int), \
-                "params['{}'] must have an integer mapping for 'free space'. Got: {}".format(tier, params[tier])
-            assert "CPU_access" in params[tier] and isinstance(params[tier]["CPU_access"], bool), \
-                "params['{}'] must have a boolean mapping for 'CPU_access'. Got: {}".format(tier, params[tier])
-            assert "SLO_costs" in params[tier] and isinstance(params[tier]["SLO_costs"], dict), \
-                "params['{}'] must have a dictionary mapping for 'SLO_costs'. Got: {}".format(tier, params[tier])
+        assert isinstance(tier_params, dict), "tier_params must be a dictionary. Got: {}".format(tier_params)
+        for tier in tier_params:
+            assert "free_space" in tier_params[tier] and isinstance(tier_params[tier]["free_space"], int), \
+                "tier_params['{}'] must have an integer mapping for 'free space'. Got: {}".format(tier, tier_params[tier])
+            assert "CPU_access" in tier_params[tier] and isinstance(tier_params[tier]["CPU_access"], bool), \
+                "tier_params['{}'] must have a boolean mapping for 'CPU_access'. Got: {}".format(tier, tier_params[tier])
+            assert "SLO_costs" in tier_params[tier] and isinstance(tier_params[tier]["SLO_costs"], dict), \
+                "tier_params['{}'] must have a dictionary mapping for 'SLO_costs'. Got: {}".format(tier, tier_params[tier])
 
-            for access_type in params[tier]["SLO_costs"]:
-                assert isinstance(params[tier]["SLO_costs"][access_type], dict), \
-                    "params['{}']['SLO_costs'][{}] must have a dictionary with SLO cost mappings. Got: {}".format(
-                        tier, access_type, params[tier]["SLO_costs"][access_type])
+            for access_type in tier_params[tier]["SLO_costs"]:
+                assert isinstance(tier_params[tier]["SLO_costs"][access_type], dict), \
+                    "tier_params['{}']['SLO_costs'][{}] must have a dictionary with SLO cost mappings. Got: {}".format(
+                        tier, access_type, tier_params[tier]["SLO_costs"][access_type])
 
-                for slo_type in params[tier]["SLO_costs"][access_type]:
-                    assert isinstance(params[tier]["SLO_costs"][access_type][slo_type], float), \
-                        "params['{}']['SLO_costs'][{}][{}] must be a float. Got: {}".format(
-                            tier, access_type, slo_type, params[tier]["SLO_costs"][access_type][slo_type])
+                for slo_type in tier_params[tier]["SLO_costs"][access_type]:
+                    assert isinstance(tier_params[tier]["SLO_costs"][access_type][slo_type], float), \
+                        "tier_params['{}']['SLO_costs'][{}][{}] must be a float. Got: {}".format(
+                            tier, access_type, slo_type, tier_params[tier]["SLO_costs"][access_type][slo_type])
 
         # Validate the data admission policies
         assert isinstance(DAPs, dict), "DAPs must be a dictionary. Got: {}".format(DAPs)
-        for tier in params:
+        for tier in tier_params:
             assert tier in DAPs and isinstance(DAPs[tier], AbstractDataAdmissionPolicy), \
                 "DAP for {} tier is not provided. Got: {}".format(tier, DAPs)
 
         # Validate the data eviction policies
         assert isinstance(DEPs, dict), "DEPs must be a dictionary. Got: {}".format(DEPs)
-        for tier in params:
+        for tier in tier_params:
             assert tier in DEPs and isinstance(DEPs[tier], AbstractDataEvictionPolicy), \
                 "DEP for {} tier is not provided. Got: {}".format(tier, DEPs)
 
@@ -84,7 +84,7 @@ class BufferPoolSimulator():
             assert isinstance(metadata[pageID], tuple) and isinstance(metadata[pageID][0], str) and isinstance(metadata[pageID][1], bool), \
                 "metadata must map pageIDs to tuples of strings and booleans. Got: {}".format(metadata[pageID])
 
-        self.params = params
+        self.tier_params = tier_params
         self.DAPs = DAPs
         self.DEPs = DEPs
         self.SLAs = SLAs
@@ -94,7 +94,7 @@ class BufferPoolSimulator():
         self.monitor = TenantMetricsMonitor(logger)
 
         logger.info("Instantiating the Buffer Pool Simulator.")
-        logger.debug("Storage tier parameters: {}".format(self.params))
+        logger.debug("Storage tier parameters: {}".format(self.tier_params))
         logger.debug("Page metadata: {}".format(self.metadata))
         logger.debug("Data Admission Policies: {}".format(self.DAPs))
         logger.debug("Data Eviction Policies: {}".format(self.DEPs))
@@ -213,7 +213,7 @@ class BufferPoolSimulator():
 
         # Instantiate and return the BP simulator
         return BufferPoolSimulator(
-            params=storage_tier_params,
+            tier_params=storage_tier_params,
             DAPs=data_admission_policies,
             DEPs=data_eviction_policies,
             SLAs=tenant_slas,
@@ -273,22 +273,22 @@ class BufferPoolSimulator():
             # Check whether the page is new
             if pageID not in self.metadata:
                 self.metadata[pageID] = ("SSD", False)
-                self.params["SSD"]["free_space"] = self.params["SSD"]["free_space"] - 1
+                self.tier_params["SSD"]["free_space"] = self.tier_params["SSD"]["free_space"] - 1
                 logger.debug("Encountered pageID:{} for the first time. Assuming it's on SSD tier and not dirty. Free SSD space: {}.".format(
-                    pageID, self.params["SSD"]["free_space"]))
+                    pageID, self.tier_params["SSD"]["free_space"]))
 
             tier, dirty = self.metadata[pageID]
             logger.debug("Found pageID:{} on storage tier:{} dirty:{}".format(pageID, tier, dirty))
 
             data_access_chain = deque()
-            if not self.DAPs[tier].should_admit(pageID) and self.params[tier]["CPU_access"]:
+            if not self.DAPs[tier].should_admit(pageID) and self.tier_params[tier]["CPU_access"]:
                 # If the page should not be admitted to a different tier and the current tier is accessible by the CPU
                 # Just add the page access request to the chain
                 data_access_chain.appendleft((pageID, tier, access_type))
             else:
                 # Find the new storage tier for the page admission
                 new_tier = self.DMPs[tenantID].destination_on_admission_from(time, pageID, tier)
-                while not self.params[new_tier]["CPU_access"]:
+                while not self.tier_params[new_tier]["CPU_access"]:
                     new_tier = self.DMPs[tenantID].destination_on_admission_from(time, pageID, new_tier)
 
                 # This is the final part of the chain, actually servicing the request
@@ -305,15 +305,15 @@ class BufferPoolSimulator():
                 # Remove the page from the residency with the DEP in the old tier
                 self.DEPs[tier].update_residency(pageID, False)
                 if tier != "SSD":
-                    self.params[tier]["free_space"] = self.params[tier]["free_space"] + 1
-                    logger.debug("{} tier remaining free space: {}".format(tier, self.params[tier]["free_space"]))
+                    self.tier_params[tier]["free_space"] = self.tier_params[tier]["free_space"] + 1
+                    logger.debug("{} tier remaining free space: {}".format(tier, self.tier_params[tier]["free_space"]))
 
                 # Make sure the new tier has enough free space
                 victim_page = pageID
                 while True:
-                    if self.params[new_tier]["free_space"] > 0:
-                        self.params[new_tier]["free_space"] = self.params[new_tier]["free_space"] - 1
-                        logger.debug("{} tier remaining free space: {}".format(new_tier, self.params[new_tier]["free_space"]))
+                    if self.tier_params[new_tier]["free_space"] > 0:
+                        self.tier_params[new_tier]["free_space"] = self.tier_params[new_tier]["free_space"] - 1
+                        logger.debug("{} tier remaining free space: {}".format(new_tier, self.tier_params[new_tier]["free_space"]))
                         break
                     else:
                         old_victim_page = victim_page
@@ -341,7 +341,7 @@ class BufferPoolSimulator():
                 # Update the SLO costs
                 d_pageID, d_tier, d_access_type = data_access_chain[j] # Destination pageID, tier and access type
                 if time >= warmup:
-                    slo_val += self.params[d_tier]["SLO_costs"][d_access_type][self.SLAs[tenantID].slo_type]
+                    slo_val += self.tier_params[d_tier]["SLO_costs"][d_access_type][self.SLAs[tenantID].slo_type]
                 if d_access_type == "copy":
                     # When the page is copied over it has to become a resident of the destination storage tier
                     # For non-copy accesses page will become resident through record_access method with resident=True
@@ -401,7 +401,7 @@ class BufferPoolSimulator():
         file_name = "{}tier_params.json".format(dump_dir)
         logger.info("Dumping the storage tier parameters into: {}".format(file_name))
         with open(file_name, 'w') as f:
-            json.dump(self.params, f)
+            json.dump(self.tier_params, f)
 
         file_name = "{}tier_metadata.json".format(dump_dir)
         logger.info("Dumping the storage tier metadata into: {}".format(file_name))
@@ -731,7 +731,7 @@ if __name__ == "__main__":
 
         # Instantiate the BP simulator
         bpsim = BufferPoolSimulator(
-            params=storage_tier_params,
+            tier_params=storage_tier_params,
             DAPs=data_admission_policies,
             DEPs=data_eviction_policies,
             SLAs=tenant_slas,
@@ -808,7 +808,7 @@ if __name__ == "__main__":
         bpsim.sim(N, timestamps, pages, tenants, types, args.output_file, args.from_time, args.to_time, args.warmup)
     except Exception as e:
         logger.error("Buffer Pool Simulator crashed.")
-        logger.error("Storage tier parameters: {}".format(bpsim.params))
+        logger.error("Storage tier parameters: {}".format(bpsim.tier_params))
         logger.error("Data Admission Policies: {}".format(bpsim.DAPs))
         logger.error("Data Eviction Policies: {}".format(bpsim.DEPs))
         logger.error("Tenant SLAs: {}".format(bpsim.SLAs))
