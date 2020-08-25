@@ -3,20 +3,20 @@ import os, datetime
 rel_forks_count = 0
 rel_forks = {}
 timestamp_decrease = int(datetime.datetime.strptime(
-    "2020-08-01 18:32:11.340 UTC"[:-4] + "000", '%Y-%m-%d %H:%M:%S.%f').timestamp() * 1000)
+    "2020-08-17 04:25:01.433 UTC"[:-4] + "000", '%Y-%m-%d %H:%M:%S.%f').timestamp() * 1000)
 
-with open("4hour_24steps_pas.csv", 'w') as out_file:
+with open("6hr_12st_16ten_v2_pas.csv", 'w') as out_file:
     out_file.write("timestamp,pageID,tenantID,access_type\n")
 
-    for file_name in list(sorted(os.listdir("/media/pg_data_ssd/4hour_24step_tpcc_pg_logs/"))):
-        if not os.path.isfile("/media/pg_data_ssd/4hour_24step_tpcc_pg_logs/{}".format(file_name)):
+    for file_name in list(sorted(os.listdir("pgsql_logs/"))):
+        if not os.path.isfile("pgsql_logs/{}".format(file_name)):
             continue
 
         print("Processing file: {}".format(file_name))
 
-        with open("/media/pg_data_ssd/4hour_24step_tpcc_pg_logs/{}".format(file_name)) as file:
+        with open("pgsql_logs/{}".format(file_name)) as file:
 
-            file_size = os.path.getsize("/media/pg_data_ssd/4hour_24step_tpcc_pg_logs/{}".format(file_name))
+            file_size = os.path.getsize("pgsql_logs/{}".format(file_name))
             records_counter = 0
 
             log_line = file.readline().strip()
@@ -40,12 +40,12 @@ with open("4hour_24steps_pas.csv", 'w') as out_file:
                         block_id = (rel_forks[rel_fork] << 32) + block_id
 
                         out_file.write("{},{},{},{}\n".format(
-                            timestamp, block_id, user, "read" if typ == "read" else "update"))
+                            timestamp, block_id, user, "read" if typ[:4] == "read" else "update"))
 
                 records_counter += 1
-                if records_counter == 1000:
+                if records_counter == 10000:
                     records_counter = 0
                     print("\rProgress: {:6.2f}%".format(100 * file.tell() / file_size), end='')
 
                 log_line = file.readline().strip()
-        print("\rProgress: 100%")
+        print("\rProgress: 100.00%")

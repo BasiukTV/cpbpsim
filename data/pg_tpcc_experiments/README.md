@@ -5,7 +5,7 @@
 ### Storage Tier Parameters
 
 #### Explanation
-* Assuming 32KB page size - 2GB worth of RAM, 10GB NVM, 2000GB of SSD.
+* Assuming 32KB page size - 1GB worth of RAM, 10GB NVM, 2000GB of SSD.
 * 6 Hour, 12 Tenant experiment referenced 802776 unique page IDs, which is approx 25.5GB of data footprint.
 
 #### CSV file contents
@@ -13,11 +13,19 @@
 name,free_space,CPU_access,type1,SLO1,cost1,type2,SLO2,cost2,type3,SLO3,cost3
 SSD,65536000,False,read,latency,300000,update,latency,300000,copy,latency,300000
 NVM,327680,True,read,latency,20,update,latency,50,copy,latency,50
-RAM,65536,True,read,latency,10,update,latency,10,copy,latency,10
+RAM,32768,True,read,latency,10,update,latency,10,copy,latency,10
 ```
 
 #### CSV file
 [Storage Tier Parameters](simulator_init/tier_params.csv)
+
+#### Alternative CSV file contents
+```
+name,free_space,CPU_access,type1,SLO1,cost1,type2,SLO2,cost2,type3,SLO3,cost3
+SSD,65536000,False,read,latency,300000,update,latency,300000,copy,latency,300000
+NVM,16384,True,read,latency,20,update,latency,50,copy,latency,50
+RAM,16384,True,read,latency,10,update,latency,10,copy,latency,10
+```
 
 ### Tenant SLAs
 
@@ -88,6 +96,9 @@ tenantID,type,tiers,tier1,tier2,...,param1,param2,param3,...
 #### CSV file
 [Baseline DMPs](simulator_init/tenant_dmps.csv)
 
+#### Explanation
+* 6hours_12steps PAS file is 12.5 GB large, and we load it all in memory. So we only process 30 minutes of it below.
+
 ### Simulator Execution Parameters
 ```
 $ time python3 cpbpsim/bp_simulator.py \
@@ -97,11 +108,24 @@ $ time python3 cpbpsim/bp_simulator.py \
     --tenant-slas data/pg_tpcc_experiments/simulator_init/tenant_slas.csv \
     --tenant-dmps data/pg_tpcc_experiments/simulator_init/tenant_dmps.csv \
     --pas-file ../6hours_12steps/pas.csv \
-    --warmup 1800000 \
     --log-file ../6hours_12steps/cpbpsim/logs/run1.log \
     --log-level INFO \
     --output-file ../6hours_12steps/cpbpsim/results/result1.csv \
-    --sim-state-dump-dir ../6hours_12steps/cpbpsim/state_dumps/
+    --sim-state-dump-dir ../6hours_12steps/cpbpsim/state_dumps/ \
+    --to-time 1800000
+```
+
+### Simulator Re-Start Parameters
+```
+$ time python3 cpbpsim/bp_simulator.py \
+    --init-dir ../6hours_12steps/cpbpsim/state_dumps/ \
+    --pas-file ../6hours_12steps/pas.csv \
+    --log-file ../6hours_12steps/cpbpsim/logs/run1.log \
+    --log-level INFO \
+    --output-file ../6hours_12steps/cpbpsim/results/result1.csv \
+    --sim-state-dump-dir ../6hours_12steps/cpbpsim/state_dumps/ \
+    --from-time 180000 \
+    --to-time 3600000
 ```
 
 #### Simulation Results

@@ -13,7 +13,7 @@
     <scalefactor>3</scalefactor>
     
     <!-- The workload -->
-    <terminals>2</terminals>
+    <terminals>6</terminals>
     <works>
         <work>
           <time>900</time>
