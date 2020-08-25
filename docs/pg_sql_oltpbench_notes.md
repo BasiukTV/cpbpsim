@@ -18,14 +18,16 @@
 * [PostgreSQL User Account](https://www.postgresql.org/docs/current/postgres-user.html)
     + `sudo adduser postgres`
 * [Creating the Database Cluster](https://www.postgresql.org/docs/current/creating-cluster.html)
-    + `./initdb -D /media/pg_data_ssd/bench_clust_data`
-* [Staring the Database Server](https://www.postgresql.org/docs/current/server-start.html)
-    + `./pg_ctl -D /media/pg_data_ssd/bench_clust_data/ start`
+    + `./initdb -D /mydata/cpbptunexp/bench_clust_data`
+* After configuring to accept remote connections - [Staring the Database Server](https://www.postgresql.org/docs/current/server-start.html)
+    + `./pg_ctl -D /mydata/cpbptunexp/bench_clust_data start`
     + To restart the server use 'restart' in pg_ctl command
 
 ## Remote PostgreSQL Connection
 * [Configure PostgreSQL to Accept Remote Connections](https://blog.bigbinary.com/2016/01/23/configure-postgresql-to-allow-remote-connection.html)
+    + Copy over [pg_hba.conf](pg_hba.conf) and [postgresql.conf](postgresql.conf) into `/mydata/cpbptunexp/bench_clust_data`
 * [Setting Admin User Password](https://stackoverflow.com/questions/7695962/postgresql-password-authentication-failed-for-user-postgres)
+    + `./psql`
     + `ALTER USER postgres PASSWORD 'postgres_password';`
 * [PGAdmin Console](https://www.pgadmin.org/) used to connect to the database.
 
@@ -44,15 +46,28 @@
     + `ant bootstrap`
     + `ant resolve`
     + `ant build`
-* To setup and populate tenant benchmark database
-    + `./oltpbenchmark -b tpcc -c cpbptun_experiments/t1_flat.xml --create=true --load=true </dev/null &>/dev/null &`
+* To setup and populate tenant benchmark database (32 tenants)
+    + `cp -R cpbpsim/utils/oltp_tenant_configs/ oltpbench/cpbptun_experiments`
+    + `cp cpbpsim/utils/oltpbench_loader_32t.py oltpbench/`
+    + `cd oltpbench`
+    + `python3 oltpbench_loader_32t.py </dev/null &>loader.log &`
     + `disown`
-* To run the benchmark (for 300 seconds)
-    + `./oltpbenchmark -b tpcc -c cpbptun_experiments/t1_flat.xml --execute=true -s 10 -o tpcc1_postgres_result </dev/null &>/dev/null &`
+* [Dump All Databases Before Running the Benchmarks](https://www.postgresql.org/docs/12/backup-dump.html)
+    + `./pg_dumpall > /mydata/cpbptunexp/bench_clust_data/pg_dumpall_tpcc_32t.sql`
+    + To download the dump, archive it first: `gzip pg_dumpall_tpcc_32t.sql`
+* To run the benchmarks (16 tenants, for 3 hours)
+    + Stop the database, clean the logs and restart the database
+    + `cp cpbpsim/utils/oltpbench_launcher_16t_12s.py oltpbench/`
+    + `cd oltpbench`
+    + `python3 oltpbench_launcher_16t_12s.py </dev/null &>launcher.log &`
     + `disown`
+    
+## PostgreSQL Logs Processing
+* Modify this [tool](../utils/pg_logs_to_pas_conv.py) to convert PostgreSQL logs into PAS file.
+* Modify this [tool](../utils/pg_logs_analyzer.py) to get the some data exploration analysis of the PostgreSQL logs.
 
 ## Some Remote Host Management Stuff
-* Cheking disks, their mountpoints and free space
+* Checking disks, their mountpoints and free space
     + `df -h` or `lsblk`
 * [Mounting Disks](https://unix.stackexchange.com/questions/315063/mount-wrong-fs-type-bad-option-bad-superblock#315070)
 * System Load Monitoring
@@ -62,4 +77,6 @@
     + `sudo chmod -R a+rwx /path/to/folder/`
 * Searching for suitable apt packages
     + `apt-cache search keyword`
-
+* Manupilating many files at once
+    + Renaming example: `for file in *100.xml; do mv "$file" "${file/100/40}"; done`
+    + Find and Replace: `sed -i 's/<time>900</<time>1800</g' *.xml`
