@@ -1,6 +1,6 @@
 __author__ = "Taras Basiuk"
 
-import os, logging
+import os, logging, heapq
 from collections import deque
 from datetime import datetime
 
@@ -19,20 +19,26 @@ except ImportError: # Import when the tool is used as a dependency
 
 class BufferPoolSimulator():
 
-    def __init__(self, tier_params, DAPs, DEPs, SLAs, DMPs, metadata={}, logger=logging.getLogger(__name__)):
+    def __init__(self, workers, tier_params, DAPs, DEPs, SLAs, DMPs, metadata={}, busy_workers_heapq=[], logger=logging.getLogger(__name__)):
         """
             Constructor for the BufferPoolSimulator.
             Expects:
+                workers - number of storage workers capable of simultaneously processing page access requests
                 tier_params - storage tier parameters dictionary, having free space, CPU_acess flag, and SLO costs
                 DAPs - storage tier data admission policies
                 DEPs - storage tier data eviction policies
                 SLAs - Tenant service level agreements
                 DMPs - Tenant data migration policies
                 metadata - dictionary with page locations and dirty flags
+                busy_workers_heapq - heapq queue holding timestamps of release time of currently busy workers
                 logger - initialized logger
         """
 
         # Validate the given parameters
+
+        assert isinstance(workers, int) and workers > 0, "workers must be a positive integer. Got: {}".format(workers)
+        assert isinstance(busy_workers_heapq, list) and len(busy_workers_heapq) <= workers, \
+            "busy_workers_heapq must be a heapq with no more than workers entries. Got: {}".format(busy_workers_heapq)
 
         # Validate the storage tier parameters
         assert isinstance(tier_params, dict), "tier_params must be a dictionary. Got: {}".format(tier_params)
@@ -84,16 +90,22 @@ class BufferPoolSimulator():
             assert isinstance(metadata[pageID], tuple) and isinstance(metadata[pageID][0], str) and isinstance(metadata[pageID][1], bool), \
                 "metadata must map pageIDs to tuples of strings and booleans. Got: {}".format(metadata[pageID])
 
+        self.workers = workers
         self.tier_params = tier_params
         self.DAPs = DAPs
         self.DEPs = DEPs
         self.SLAs = SLAs
         self.DMPs = DMPs
+
+        heapq.heapify(busy_workers_heapq)
+        self.busy_workers_heapq = busy_workers_heapq
+
         self.metadata = metadata
         self.logger = logger
         self.monitor = TenantMetricsMonitor(logger)
 
         logger.info("Instantiating the Buffer Pool Simulator.")
+        logger.debug("Workers: {}, Busy workers heap queue: {}".format(self.workers, self.busy_workers_heapq))
         logger.debug("Storage tier parameters: {}".format(self.tier_params))
         logger.debug("Page metadata: {}".format(self.metadata))
         logger.debug("Data Admission Policies: {}".format(self.DAPs))
@@ -108,12 +120,23 @@ class BufferPoolSimulator():
         import json
 
         # Container for all parameters
+        workers = None
+        busy_workers_heapq = []
         storage_tier_params = {}
         page_metadata = {}
         data_admission_policies = {}
         data_eviction_policies = {}
         tenant_dmps = {}
         tenant_slas = {}
+
+        # Read in the number of storage workers and current busy workers heap queue
+        bpsim_params_file = "{}bpsim_params.json".format(init_dir)
+        assert os.path.isfile(bpsim_params_file), "Was not able to find the bp simulator parameters file at: {}".format(bpsim_params_file)
+        with open(bpsim_params_file) as f:
+            bpsim_params = json.load(f)
+            workers = bpsim_params['workers']
+            busy_workers_heapq = bpsim_params['busy_workers_heapq']
+            heapq.heapify(busy_workers_heapq)
 
         # Reading in the storage tier parameters from the initialization directory
         storage_tier_params_file = "{}tier_params.json".format(init_dir)
@@ -186,9 +209,9 @@ class BufferPoolSimulator():
             dmp_file_path = "{}{}".format(data_migration_policies_dir, f)
             if typ == "PROB":
                 tenant_dmps[int(tenant)] = ProbabilityBasedDataMigrationPolicy(init_from_file=dmp_file_path)
-            if typ == "NAI":
+            elif typ == "NAI":
                 tenant_dmps[int(tenant)] = NaiveDataMigrationPolicy(init_from_file=dmp_file_path)
-            if typ == "3TB":
+            elif typ == "3TB":
                 tenant_dmps[int(tenant)] = ThreeTierBufferDataMigrationPolicy(init_from_file=dmp_file_path)
             else:
                 raise ValueError("Unknown data migration policy type: {}".format(typ))
@@ -213,11 +236,13 @@ class BufferPoolSimulator():
 
         # Instantiate and return the BP simulator
         return BufferPoolSimulator(
+            workers = workers,
             tier_params=storage_tier_params,
             DAPs=data_admission_policies,
             DEPs=data_eviction_policies,
             SLAs=tenant_slas,
             DMPs=tenant_dmps,
+            busy_workers_heapq = busy_workers_heapq,
             metadata=page_metadata,
             logger=logger)
 
@@ -398,6 +423,12 @@ class BufferPoolSimulator():
         logger.info("Starting to dump the state of the simulator into: {}".format(dump_dir))
 
         import json
+
+        file_name = "{}bpsim_params.json".format(dump_dir)
+        logger.info("Dumping the BP simulator parameters into: {}".format(file_name))
+        with open(file_name, 'w') as f:
+            json.dump({'workers': self.workers, 'busy_workers_heapq': self.busy_workers_heapq}, f)
+
         file_name = "{}tier_params.json".format(dump_dir)
         logger.info("Dumping the storage tier parameters into: {}".format(file_name))
         with open(file_name, 'w') as f:
@@ -448,9 +479,9 @@ class BufferPoolSimulator():
             typ = None
             if isinstance(self.DMPs[dmp], ProbabilityBasedDataMigrationPolicy):
                 typ = "PROB"
-            if isinstance(self.DMPs[dmp], NaiveDataMigrationPolicy):
+            elif isinstance(self.DMPs[dmp], NaiveDataMigrationPolicy):
                 typ = "NAI"
-            if isinstance(self.DMPs[dmp], ThreeTierBufferDataMigrationPolicy):
+            elif isinstance(self.DMPs[dmp], ThreeTierBufferDataMigrationPolicy):
                 typ = "3TB"
             else:
                 raise ValueError("Unknown data migration policy name: {}".format(self.DMPs[dmp]))
@@ -475,6 +506,8 @@ class BufferPoolSimulator():
 if __name__ == "__main__":
 
     # Default values
+    DEFAULT_WORKERS = 10
+
     DEFAULT_TIER_PARAMS_FILE = "data_sets/tier_params.csv"
     DEFAULT_TIER_DAPS_FILE = "data_sets/tier_daps.csv"
     DEFAULT_TIER_DEPS_FILE = "data_sets/tier_deps.csv"
@@ -509,6 +542,8 @@ if __name__ == "__main__":
                 If this option is provided, all of the below options will be ignored:
                     -P, -A, -E, -T, -D.
                 They will be read in from the directory.''')
+    parser.add_argument('-WS', '--workers', type=int, default=DEFAULT_WORKERS,
+        help='Number of storage workers capable of simultaneously processing page access requests. Default: {}'.format(DEFAULT_WORKERS))
     parser.add_argument('-P', '--tier-params', type=str, default=DEFAULT_TIER_PARAMS_FILE,
         help="""Input file with the storage tier parameters. Expected contents:
                     header1,header2,header3,...
@@ -588,6 +623,8 @@ if __name__ == "__main__":
         data_eviction_policies = {}
         tenant_dmps = {}
         tenant_slas = {}
+
+        assert args.workers > 0, "Number of storage workers must be positive. Got: {}".format(args.workers)
 
         # Read in and validate storage tier parameters
         assert os.path.isfile(args.tier_params), "Storage tier parameters file value must be a valid path. Got: {}".format(args.tier_params)
@@ -731,6 +768,7 @@ if __name__ == "__main__":
 
         # Instantiate the BP simulator
         bpsim = BufferPoolSimulator(
+            workers = args.workers,
             tier_params=storage_tier_params,
             DAPs=data_admission_policies,
             DEPs=data_eviction_policies,

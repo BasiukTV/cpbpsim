@@ -1,0 +1,1 @@
+{"slo_type": "latency", "eval_period": 300000, "intervals": {"0.9": [0.0, 0.8], "0.99": [0.0, 1.0]}, "starting_points": [0.9, 0.99], "baseline_slope": 0.0, "baseline_intercept": 0.0, "slo_record_timestamps": [], "slo_recordings": {}}
