@@ -11,7 +11,7 @@ class AbstractMetricsMonitor(ABC):
         pass
 
     @abstractmethod
-    def record_metric(self, timestamp, tenant, page_tier, data_access_chain, slo_val):
+    def record_metric(self, timestamp, tenant, page_tier, data_access_chain, slo_val, worker_waiting):
         """Record the timestamp, tenant, page_tier, data_access_chain and slo_val related metrics."""
         pass
 
@@ -33,7 +33,10 @@ class TenantMetricsMonitor(AbstractMetricsMonitor):
         self.data_access_chain_metrics = {}
         self.slo_val_metrics = {}
 
-    def record_metric(self, timestamp, tenant, page_tier, data_access_chain, slo_val):
+        # Dictionary for the worker waiting times
+        self.worker_waiting_times = {}
+
+    def record_metric(self, timestamp, tenant, page_tier, data_access_chain, slo_val, worker_waiting):
         """Record the timestamp, tenant, page_tier, data_access_chain and slo_val related metrics."""
         if tenant not in self.tier_metrics:
             self.tier_metrics[tenant] = {}
@@ -43,6 +46,8 @@ class TenantMetricsMonitor(AbstractMetricsMonitor):
         self.tier_metrics[tenant][timestamp] = page_tier
         self.data_access_chain_metrics[tenant][timestamp] = len(data_access_chain)
         self.slo_val_metrics[tenant][timestamp] = slo_val
+
+        self.worker_waiting_times[timestamp] = worker_waiting
 
     def log_aggregate_metrics(self, from_time):
         # For every tenant
@@ -105,9 +110,27 @@ class TenantMetricsMonitor(AbstractMetricsMonitor):
             percentiles["p100"] = slo_values[-1]
             self.logger.info("tenantID:{} data SLO cost percentiles: {}".format(tenant, percentiles))
 
+        # Calculate the average and percentile storage worker waiting times
+        waiting_times = []
+        for timestamp in self.worker_waiting_times:
+            if timestamp < from_time:
+                continue
+
+            waiting_times.append(self.worker_waiting_times[timestamp])
+
+        waiting_times = sorted(waiting_times)
+
+        self.logger.info("Average storage worker microseconds waiting time: {}".format(sum(waiting_times) / len(waiting_times)))
+
+        percentiles = {}
+        for p in range(0, 100, 5):
+            percentiles["p{}".format(p)] = waiting_times[int((p * len(waiting_times)) / 100)]
+        percentiles["p100"] = waiting_times[-1]
+        self.logger.info("Storage worker microseconds waiting times percentiles: {}".format(percentiles))
+
     def __str__(self):
-        return "TenantMetricsMonitor - Tier Metrics: {}, Data Access Chain Metrics: {}, SLO Value Metrics: {}".format(
-            self.tier_metrics, self.data_access_chain_metrics, self.slo_val_metrics)
+        return "TenantMetricsMonitor - Tier Metrics: {}, Data Access Chain Metrics: {}, SLO Value Metrics: {}, Storage Worker Waiting Times Metrics: {}".format(
+            self.tier_metrics, self.data_access_chain_metrics, self.slo_val_metrics, self.worker_waiting_times)
 
     def __repr__(self):
         return str(self)

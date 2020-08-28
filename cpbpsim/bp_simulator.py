@@ -294,6 +294,26 @@ class BufferPoolSimulator():
             logger.debug("Page access request #{} - time:{}, pageID:{}, tenantID:{}, access_type:{}".format(
                 i + 1, time, pageID, tenantID, access_type))
 
+            # Free up workers
+            time_micro = time * 1000 # Convert the timestamp into microseconds
+
+            # Free up all the workers who are finished by the current timestamps
+            while len(self.busy_workers_heapq) > 0 and self.busy_workers_heapq[0] <= time_micro:
+                heapq.heappop(self.busy_workers_heapq)
+
+            # If there aren't any free workers available, wait for the first one to become available
+            # If SLO is latency, add waiting for the free worker to the SLO
+            slo_val = 0
+            wait_until = time_micro
+            worker_waiting = 0
+            if len(self.busy_workers_heapq) >= self.workers:
+                wait_until = heapq.heappop(self.busy_workers_heapq)
+                worker_waiting = wait_until - time_micro
+
+                if self.SLAs[tenantID].slo_type == "latency":
+                    slo_val += worker_waiting * 1000 # Latency SLO is recorded in nano seconds
+                    logger.debug("Had to wait for a free storage worker for {} microseconds.".format(worker_waiting))
+
             # Retrieve the current storage tier the page ID belongs to
             # Check whether the page is new
             if pageID not in self.metadata:
@@ -361,12 +381,13 @@ class BufferPoolSimulator():
 
             # Process the data access chain
             logger.debug("Page access request #{} data access chain: {}".format(i + 1, data_access_chain))
-            slo_val = 0
+            wait_until *= 1000 # Convert worker busy until time to nanoseconds
             for j in range(len(data_access_chain)):
                 # Update the SLO costs
                 d_pageID, d_tier, d_access_type = data_access_chain[j] # Destination pageID, tier and access type
                 if time >= warmup:
                     slo_val += self.tier_params[d_tier]["SLO_costs"][d_access_type][self.SLAs[tenantID].slo_type]
+                    wait_until = int(wait_until + self.tier_params[d_tier]["SLO_costs"][d_access_type]["latency"])
                 if d_access_type == "copy":
                     # When the page is copied over it has to become a resident of the destination storage tier
                     # For non-copy accesses page will become resident through record_access method with resident=True
@@ -387,6 +408,9 @@ class BufferPoolSimulator():
             if time >= warmup:
                 self.SLAs[tenantID].record_SLO(time, slo_val)
 
+            # Block the worker until the page processing is finished (convert wait_until to microseconds again)
+            heapq.heappush(self.busy_workers_heapq, wait_until // 1000)
+
             # Record page access request for DAPs and DEPs
             for t in self.DAPs:
                 self.DAPs[t].record_access(time, pageID, access_type)
@@ -395,7 +419,7 @@ class BufferPoolSimulator():
 
             # Record monitoring metrics
             if time >= warmup:
-                self.monitor.record_metric(time, tenantID, tier, data_access_chain, slo_val)
+                self.monitor.record_metric(time, tenantID, tier, data_access_chain, slo_val, worker_waiting)
 
         # Calculate the SLA penalty results
         penalties = {}
@@ -804,7 +828,7 @@ if __name__ == "__main__":
             page_access_request = f.readline().strip() # Read the first normal line
             timestamp = int(page_access_request.split(',')[0])
 
-            # We need to land withing a minute of from_time but no longer than that
+            # We need to land within a minute of from_time but no longer than that
             while not (timestamp <= args.from_time and timestamp + 60000 >= args.from_time):
                 if timestamp <= args.from_time:
                     # We didn't go far enough
