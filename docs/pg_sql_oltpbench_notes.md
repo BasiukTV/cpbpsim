@@ -6,8 +6,8 @@
     + `sudo apt install libreadline-dev libreadline7`
     + `sudo apt install zlib1g-dev`
 * [Getting the Source](https://www.postgresql.org/docs/current/install-getsource.html)
-    + `sudo wget  https://ftp.postgresql.org/pub/source/v12.3/postgresql-12.3.tar.gz`
-    + `tar -xvzf postgresql-12.3.tar.gz`
+    + `sudo wget  https://ftp.postgresql.org/pub/source/v12.4/postgresql-12.4.tar.gz`
+    + `tar -xvzf postgresql-12.4.tar.gz`
 * Make required sourcecode changes to collect the traces now
 * [Installation Procedure](https://www.postgresql.org/docs/current/install-procedure.html)
     + './configure --enable-debug'
@@ -18,9 +18,17 @@
 * [PostgreSQL User Account](https://www.postgresql.org/docs/current/postgres-user.html)
     + `sudo adduser postgres`
 * [Creating the Database Cluster](https://www.postgresql.org/docs/current/creating-cluster.html)
-    + `./initdb -D /mydata/cpbptunexp/bench_clust_data`
+    + `sudo mkdir /mydata/tempfs/bench_clust_data`
+    + `sudo chown postgres /mydata/tempfs/bench_clust_data`
+    + `su postgres`
+    + `cd /usr/local/pgsql/bin`
+    + `./initdb -D /mydata/tempfs/bench_clust_data`
 * After configuring to accept remote connections - [Staring the Database Server](https://www.postgresql.org/docs/current/server-start.html)
-    + `./pg_ctl -D /mydata/cpbptunexp/bench_clust_data start`
+    + `cd /mydata/remoteds/cpbpsim/docs/`
+    + `sudo cp pg_hba.conf postgresql.conf /mydata/tempfs/bench_clust_data/`
+    + `su postgres`
+    + `cd /usr/local/pgsql/bin`
+    + `./pg_ctl -D /mydata/tempfs/bench_clust_data start`
     + To restart the server use 'restart' in pg_ctl command
 
 ## Remote PostgreSQL Connection
@@ -55,6 +63,12 @@
 * [Dump All Databases Before Running the Benchmarks](https://www.postgresql.org/docs/12/backup-dump.html)
     + `./pg_dumpall > /mydata/cpbptunexp/bench_clust_data/pg_dumpall_tpcc_32t.sql`
     + To download the dump, archive it first: `gzip pg_dumpall_tpcc_32t.sql`
+* Restoring the Databases from the Dump
+    + `gzip -d -k /mydata/remoteds/sql_dumps/pg_dumpall_tpcc_32t.sql.gz`
+    + `sudo chown postgres /mydata/remoteds/sql_dumps/pg_dumpall_tpcc_32t.sql`
+    + `su postgres`
+    + `cd /usr/local/pgsql/bin`
+    + `./psql -f /mydata/remoteds/sql_dumps/pg_dumpall_tpcc_32t.sql postgres`
 * To run the benchmarks (16 tenants, for 3 hours)
     + Stop the database, clean the logs and restart the database
     + `cp cpbpsim/utils/oltpbench_launcher_16t_12s.py oltpbench/`
