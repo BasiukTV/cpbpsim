@@ -1,1 +1,0 @@
-{"tiers": ["SSD", "NVM", "RAM"], "tier_index": {"SSD": 0, "NVM": 1, "RAM": 2}, "data_admission_matrix": [[0.0, 0.5, 0.5], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]], "data_eviction_matrix": [[1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.5, 0.5, 0.0]]}
