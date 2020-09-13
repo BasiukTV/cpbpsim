@@ -9,17 +9,19 @@ try: # Imports when the tool run by itself
     from data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy, NaiveDataMigrationPolicy, ThreeTierBufferDataMigrationPolicy
     from data_admission_policy.data_admission_policy import AbstractDataAdmissionPolicy, EagerDataAdmissionPolicy, NeverDataAdmissionPolicy, Q2DataAdmissionPolicy
     from data_eviction_policy.data_eviction_policy import AbstractDataEvictionPolicy, FIFODataEvictionPolicy, LRUEvictionPolicy, NeverDataEvictionPolicy
+    from byte_addressability.byte_addressability import AbstraByteAddressabilityPolicy, NoByteAddressabilityPolicy
     from monitoring.monitoring import TenantMetricsMonitor
 except ImportError: # Import when the tool is used as a dependency
     from cpbpsim.slas.sla_penalty_function import AbstractSLAPenaltyFunction, AveragingPiecewiseLinearSLAPenaltyFunction
     from cpbpsim.data_migration_policy.data_migration_policy import AbstractDataMigrationPolicy, ProbabilityBasedDataMigrationPolicy, NaiveDataMigrationPolicy, ThreeTierBufferDataMigrationPolicy
     from cpbpsim.data_admission_policy.data_admission_policy import AbstractDataAdmissionPolicy, EagerDataAdmissionPolicy, NeverDataAdmissionPolicy, Q2DataAdmissionPolicy
     from cpbpsim.data_eviction_policy.data_eviction_policy import AbstractDataEvictionPolicy, FIFODataEvictionPolicy, LRUEvictionPolicy, NeverDataEvictionPolicy
+    from cpbpsim.byte_addressability.byte_addressability import AbstraByteAddressabilityPolicy, NoByteAddressabilityPolicy
     from cpbpsim.monitoring.monitoring import TenantMetricsMonitor
 
 class BufferPoolSimulator():
 
-    def __init__(self, workers, tier_params, DAPs, DEPs, SLAs, DMPs, metadata={}, busy_workers_heapq=[], logger=logging.getLogger(__name__)):
+    def __init__(self, workers, tier_params, DAPs, DEPs, SLAs, DMPs, BAP, metadata={}, busy_workers_heapq=[], logger=logging.getLogger(__name__)):
         """
             Constructor for the BufferPoolSimulator.
             Expects:
@@ -29,6 +31,7 @@ class BufferPoolSimulator():
                 DEPs - storage tier data eviction policies
                 SLAs - Tenant service level agreements
                 DMPs - Tenant data migration policies
+                BAP - Byte-addressability policy
                 metadata - dictionary with page locations and dirty flags
                 busy_workers_heapq - heapq queue holding timestamps of release time of currently busy workers
                 logger - initialized logger
@@ -84,6 +87,9 @@ class BufferPoolSimulator():
             assert isinstance(DMPs[tenant], AbstractDataMigrationPolicy), \
                 "DMP for {} tenant is not provided. Got: {}".format(tenant, DMPs)
 
+        assert isinstance(BAP, AbstraByteAddressabilityPolicy), \
+                "BAP must be an instance of AbstraByteAddressabilityPolicy. Got: {}".format(BAP)
+
         # Validate page metadata
         assert isinstance(metadata, dict), "metadata must be a dictionary. Got: {}".format(metadata)
         for pageID in metadata:
@@ -96,6 +102,7 @@ class BufferPoolSimulator():
         self.DEPs = DEPs
         self.SLAs = SLAs
         self.DMPs = DMPs
+        self.BAP = BAP
 
         heapq.heapify(busy_workers_heapq)
         self.busy_workers_heapq = busy_workers_heapq
@@ -112,6 +119,7 @@ class BufferPoolSimulator():
         logger.debug("Data Eviction Policies: {}".format(self.DEPs))
         logger.debug("Tenant SLAs: {}".format(self.SLAs))
         logger.debug("Tenant DMPs: {}".format(self.DMPs))
+        logger.debug("Byte Addressability Policy: {}".format(self.BAP))
         logger.debug("Tenant Metrics Monitor: {}".format(self.monitor))
 
     def init_from_dir(init_dir, logger=logging.getLogger(__name__)):
@@ -126,6 +134,7 @@ class BufferPoolSimulator():
         page_metadata = {}
         data_admission_policies = {}
         data_eviction_policies = {}
+        byte_addressability_policy = None
         tenant_dmps = {}
         tenant_slas = {}
 
@@ -149,6 +158,25 @@ class BufferPoolSimulator():
         assert os.path.isfile(page_metadata_file), "Was not able to find the storage tier metadata file at: {}".format(page_metadata_file)
         with open(page_metadata_file) as f:
             page_metadata = dict(map(lambda kv: (int(kv[0]), (kv[1][0], kv[1][1])), json.load(f).items()))
+
+        # Reading in the byte addressability policy from the initialization directory
+        byte_addressability_dir = "{}BAPs/".format(init_dir)
+        assert os.path.isdir(byte_addressability_dir), \
+            "Was not able to find the byte addressability policy directory at: {}".format(byte_addressability_dir)
+        byte_addressability_files = os.listdir(byte_addressability_dir)
+        assert len(byte_addressability_files) == 1, \
+            "Was only expecting single byte addressability file in the {} directory. Got: {}".format(byte_addressability_dir, byte_addressability_files)
+
+        f = byte_addressability_files[0]
+        file_name, extension = f.split('.')
+        assert extension == "json", "Was expecting file name of TYPE_BAP.json format, got: {}".format(f)
+        typ, bap = file_name.split('_')
+        assert bap == "BAP", "Was expecting file name of TYPE_BAP.json format, got: {}".format(f)
+        bap_file_path = "{}{}".format(byte_addressability_dir, f)
+        if typ == "NO":
+            byte_addressability_policy = NoByteAddressabilityPolicy(init_from_file=bap_file_path)
+        else:
+            raise ValueError("Unknown byte addressability policy type: {}".format(typ))
 
         # Reading in the data admission policies from the initialization directory
         data_admission_policies_dir = "{}DAPs/".format(init_dir)
@@ -242,6 +270,7 @@ class BufferPoolSimulator():
             DEPs=data_eviction_policies,
             SLAs=tenant_slas,
             DMPs=tenant_dmps,
+            BAP = byte_addressability_policy,
             busy_workers_heapq = busy_workers_heapq,
             metadata=page_metadata,
             logger=logger)
@@ -527,6 +556,18 @@ class BufferPoolSimulator():
             logger.info("Dumping the SLA for {} tenant into: {}".format(sla, file_name))
             self.SLAs[sla].persist_to_file(file_name)
 
+        # Dumping byte addressability policy
+        os.makedirs("{}BAPs/".format(dump_dir), exist_ok=True)
+        typ = None
+        if isinstance(self.BAP, NoByteAddressabilityPolicy):
+            typ = "NO"
+        else:
+            raise ValueError("Unknown byte addressability policy name: {}".format(self.BAP))
+
+        file_name = "{}BAPs/{}_BAP.json".format(dump_dir, typ)
+        logger.info("Dumping the byte addressability policy tenant into: {}".format(file_name))
+        self.BAP.persist_to_file(file_name)
+
 if __name__ == "__main__":
 
     # Default values
@@ -537,6 +578,7 @@ if __name__ == "__main__":
     DEFAULT_TIER_DEPS_FILE = "data_sets/tier_deps.csv"
     DEFAULT_TENANT_SLAS_FILE = "data_sets/tenant_slas.csv"
     DEFAULT_TENANT_DMPS_FILE = "data_sets/tenant_dmps.csv"
+    DEFAULT_BAP_FILE = "data_sets/byte_addressability.csv"
     DEFAULT_PAS_FILE = "data_sets/page_access_sequence.csv"
 
     DEFAULT_LOG_LEVEL = "INFO"
@@ -564,7 +606,7 @@ if __name__ == "__main__":
                 of the simulator state affter the previous simulation (see -SD option).
 
                 If this option is provided, all of the below options will be ignored:
-                    -P, -A, -E, -T, -D.
+                    -P, -A, -E, -T, -D, -B.
                 They will be read in from the directory.''')
     parser.add_argument('-WS', '--workers', type=int, default=DEFAULT_WORKERS,
         help='Number of storage workers capable of simultaneously processing page access requests. Default: {}'.format(DEFAULT_WORKERS))
@@ -605,6 +647,11 @@ if __name__ == "__main__":
                     tenantID1,stage0,stage1, ... ,admit0to0,admit0to1, ... ,evict0to0,evict0to1,...
                     tenantID2,stage0,stage1, ... ,admit0to0,admit0to1, ... ,evict0to0,evict0to1,...
                 Default: {}""".format(DEFAULT_TENANT_DMPS_FILE))
+    parser.add_argument('-B', '--byte-addressability', type=str, default=DEFAULT_BAP_FILE,
+        help="""Input file with byte addressability policy. Expected contents:
+                    header1,header2,header3,...
+                    bapType1,param0,param1,...
+                Default: {}""".format(DEFAULT_BAP_FILE))
     parser.add_argument('-F', '--pas-file', type=str, default=DEFAULT_PAS_FILE,
         help="""Input file with page access sequence (PAS). Expected contents:
                     timestamp(ms),tenantID,pageID,access_type(R/W)
@@ -639,13 +686,14 @@ if __name__ == "__main__":
     logger.addHandler(handler)
 
     cpbpsim = None
-    # If initializing from files
+    # If initializing from separate files
     if args.init_dir == None:
         storage_tier_params = {} # Container for all storage tier parameters
         page_metadata = {} # Start with cold buffer pool
         data_admission_policies = {}
         data_eviction_policies = {}
         tenant_dmps = {}
+        byte_addressability_policy = None
         tenant_slas = {}
 
         assert args.workers > 0, "Number of storage workers must be positive. Got: {}".format(args.workers)
@@ -790,6 +838,21 @@ if __name__ == "__main__":
 
                 dmp = f.readline().strip()
 
+        # Read in and validate byte addressability policy
+        assert os.path.isfile(args.byte_addressability), "Byte addressability policy file value must be a valid path. Got: {}".format(args.byte_addressability)
+        with open(args.byte_addressability) as f:
+            f.readline() # Skip the headers line
+            bap_params = f.readline().strip().split(',')
+
+            assert len(bap_params) >= 1, "Byte addressability policy must contain at least one parameter. Got: {}".format(bap_params)
+
+            bap_type = bap_params[0]
+
+            if bap_type == "NO":
+                byte_addressability_policy = NoByteAddressabilityPolicy()
+            else:
+                raise ValueError("Unknown byte addressability policy type: {}".format(bap_type))
+
         # Instantiate the BP simulator
         bpsim = BufferPoolSimulator(
             workers = args.workers,
@@ -798,6 +861,7 @@ if __name__ == "__main__":
             DEPs=data_eviction_policies,
             SLAs=tenant_slas,
             DMPs=tenant_dmps,
+            BAP=byte_addressability_policy,
             metadata=page_metadata,
             logger=logger)
     else:
@@ -875,6 +939,7 @@ if __name__ == "__main__":
         logger.error("Data Eviction Policies: {}".format(bpsim.DEPs))
         logger.error("Tenant SLAs: {}".format(bpsim.SLAs))
         logger.error("Tenant DMPs: {}".format(bpsim.DMPs))
+        logger.error("Byte Addressability Policy: {}".format(bpsim.BAP))
 
         raise e
 
