@@ -12,20 +12,20 @@ if __name__ == "__main__":
 
     jobs = [
         [
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t1_gold.xml --execute=true -s 10 -o t1_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t2_gold.xml --execute=true -s 10 -o t2_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t5_silver.xml --execute=true -s 10 -o t5_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t6_silver.xml --execute=true -s 10 -o t6_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t7_silver.xml --execute=true -s 10 -o t7_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t8_silver.xml --execute=true -s 10 -o t8_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t13_bronze.xml --execute=true -s 10 -o t13_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t14_bronze.xml --execute=true -s 10 -o t14_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t15_bronze.xml --execute=true -s 10 -o t15_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t16_bronze.xml --execute=true -s 10 -o t16_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t17_bronze.xml --execute=true -s 10 -o t17_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t18_bronze.xml --execute=true -s 10 -o t18_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t19_bronze.xml --execute=true -s 10 -o t19_result",
-            "./oltpbenchmark -b tpcc -c cpbptun_experiments/t20_bronze.xml --execute=true -s 10 -o t20_result"
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t1_gold.xml --execute=true -s 10 -o t1_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t2_gold.xml --execute=true -s 10 -o t2_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t5_silver.xml --execute=true -s 10 -o t5_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t6_silver.xml --execute=true -s 10 -o t6_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t7_silver.xml --execute=true -s 10 -o t7_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t8_silver.xml --execute=true -s 10 -o t8_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t13_bronze.xml --execute=true -s 10 -o t13_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t14_bronze.xml --execute=true -s 10 -o t14_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t15_bronze.xml --execute=true -s 10 -o t15_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t16_bronze.xml --execute=true -s 10 -o t16_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t17_bronze.xml --execute=true -s 10 -o t17_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t18_bronze.xml --execute=true -s 10 -o t18_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t19_bronze.xml --execute=true -s 10 -o t19_result",
+            "./oltpbenchmark -b tpcc -c tpcc_1hr_oltp_tenant_configs/t20_bronze.xml --execute=true -s 10 -o t20_result"
         ]]
 
     for bi in range(len(jobs)):
