@@ -217,3 +217,20 @@ $ python3 cpbpsim/bp_simulator.py \
     --warmup 900000 \
     --output-file data/daps_experiments/2lru-2q-hdmp/results/tpcc_1x_endurance.csv </dev/null &>/dev/null &
 ```
+
+#### 2x Resources
+```
+$ python3 cpbpsim/bp_simulator.py \
+    --workers 100 \
+    --tier-params data/daps_experiments/tpcc_2x_endurance_tier_params.csv \
+    --tier-daps data/daps_experiments/2lru-2q-hdmp/tier_daps.csv \
+    --tier-deps data/daps_experiments/2lru-2q-hdmp/tier_deps.csv \
+    --tenant-slas data/daps_experiments/tpcc_tenant_endurance_slas.csv \
+    --tenant-dmps data/daps_experiments/2lru-2q-hdmp/tenant_dmps.csv \
+    --byte-addressability data/daps_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
+    --log-file data/daps_experiments/2lru-2q-hdmp/logs/tpcc_2x_endurance.log \
+    --log-level INFO \
+    --warmup 900000 \
+    --output-file data/daps_experiments/2lru-2q-hdmp/results/tpcc_2x_endurance.csv </dev/null &>/dev/null &
+```
