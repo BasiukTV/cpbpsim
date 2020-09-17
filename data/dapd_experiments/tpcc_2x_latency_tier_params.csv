@@ -1,4 +1,4 @@
 name,free_space,CPU_access,type1,SLO1,cost1,type2,SLO2,cost2,type3,SLO3,cost3
 SSD,100000000,FALSE,read,latency,25000,update,latency,300000,copy,latency,300000
-NVM,81120,TRUE,read,latency,100,update,latency,100,copy,latency,100
-RAM,8112,TRUE,read,latency,50,update,latency,50,copy,latency,50
+NVM,73700,TRUE,read,latency,100,update,latency,100,copy,latency,100
+RAM,7370,TRUE,read,latency,50,update,latency,50,copy,latency,50

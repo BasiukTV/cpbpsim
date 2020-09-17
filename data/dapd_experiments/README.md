@@ -4,163 +4,94 @@
 
 ### Baseline
 
-#### 05x Resources
-```
-$ python3 cpbpsim/bp_simulator.py \
-    --workers 100 \
-    --tier-params data/daps_experiments/tpcc_05x_latency_tier_params.csv \
-    --tier-daps data/daps_experiments/baseline/tier_daps.csv \
-    --tier-deps data/daps_experiments/baseline/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_latency_slas.csv \
-    --tenant-dmps data/daps_experiments/baseline/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/baseline/logs/tpcc_05x_latency.log \
-    --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/baseline/results/tpcc_05x_latency.csv </dev/null &>/dev/null &
-```
-
 #### 1x Resources
 ```
 $ python3 cpbpsim/bp_simulator.py \
     --workers 100 \
-    --tier-params data/daps_experiments/tpcc_1x_latency_tier_params.csv \
-    --tier-daps data/daps_experiments/baseline/tier_daps.csv \
-    --tier-deps data/daps_experiments/baseline/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_latency_slas.csv \
-    --tenant-dmps data/daps_experiments/baseline/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/baseline/logs/tpcc_1x_latency.log \
+    --tier-params data/dapd_experiments/tpcc_1x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/baseline/tier_daps.csv \
+    --tier-deps data/dapd_experiments/baseline/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/baseline/logs/tpcc_1x_latency.log \
     --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/baseline/results/tpcc_1x_latency.csv </dev/null &>/dev/null &
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/baseline/results/tpcc_1x_latency.csv </dev/null &>/dev/null &
 ```
 
 #### 2x Resources
 ```
 $ python3 cpbpsim/bp_simulator.py \
     --workers 100 \
-    --tier-params data/daps_experiments/tpcc_2x_latency_tier_params.csv \
-    --tier-daps data/daps_experiments/baseline/tier_daps.csv \
-    --tier-deps data/daps_experiments/baseline/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_latency_slas.csv \
-    --tenant-dmps data/daps_experiments/baseline/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/baseline/logs/tpcc_2x_latency.log \
+    --tier-params data/dapd_experiments/tpcc_2x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/baseline/tier_daps.csv \
+    --tier-deps data/dapd_experiments/baseline/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/baseline/logs/tpcc_2x_latency.log \
     --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/baseline/results/tpcc_2x_latency.csv </dev/null &>/dev/null &
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/baseline/results/tpcc_2x_latency.csv </dev/null &>/dev/null &
 ```
 
 #### 4x Resources
 ```
 $ python3 cpbpsim/bp_simulator.py \
     --workers 100 \
-    --tier-params data/daps_experiments/tpcc_4x_latency_tier_params.csv \
-    --tier-daps data/daps_experiments/baseline/tier_daps.csv \
-    --tier-deps data/daps_experiments/baseline/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_latency_slas.csv \
-    --tenant-dmps data/daps_experiments/baseline/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/baseline/logs/tpcc_4x_latency.log \
+    --tier-params data/dapd_experiments/tpcc_4x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/baseline/tier_daps.csv \
+    --tier-deps data/dapd_experiments/baseline/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/baseline/logs/tpcc_4x_latency.log \
     --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/baseline/results/tpcc_4x_latency.csv </dev/null &>/dev/null &
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/baseline/results/tpcc_4x_latency.csv </dev/null &>/dev/null &
 ```
 
-### 2LRU
-
-#### 05x Resources
+#### 8x Resources
 ```
 $ python3 cpbpsim/bp_simulator.py \
     --workers 100 \
-    --tier-params data/daps_experiments/tpcc_05x_latency_tier_params.csv \
-    --tier-daps data/daps_experiments/baseline/tier_daps.csv \
-    --tier-deps data/daps_experiments/2lru/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_latency_slas.csv \
-    --tenant-dmps data/daps_experiments/baseline/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/2lru/logs/tpcc_05x_latency.log \
+    --tier-params data/dapd_experiments/tpcc_8x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/baseline/tier_daps.csv \
+    --tier-deps data/dapd_experiments/baseline/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/baseline/logs/tpcc_8x_latency.log \
     --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/2lru/results/tpcc_05x_latency.csv </dev/null &>/dev/null &
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/baseline/results/tpcc_8x_latency.csv </dev/null &>/dev/null &
 ```
 
-#### 1x Resources
+#### 16x Resources
 ```
 $ python3 cpbpsim/bp_simulator.py \
     --workers 100 \
-    --tier-params data/daps_experiments/tpcc_1x_latency_tier_params.csv \
-    --tier-daps data/daps_experiments/baseline/tier_daps.csv \
-    --tier-deps data/daps_experiments/2lru/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_latency_slas.csv \
-    --tenant-dmps data/daps_experiments/baseline/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/2lru/logs/tpcc_1x_latency.log \
+    --tier-params data/dapd_experiments/tpcc_16x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/baseline/tier_daps.csv \
+    --tier-deps data/dapd_experiments/baseline/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/baseline/logs/tpcc_16x_latency.log \
     --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/2lru/results/tpcc_1x_latency.csv </dev/null &>/dev/null &
-```
-
-#### 2x Resources
-```
-$ python3 cpbpsim/bp_simulator.py \
-    --workers 100 \
-    --tier-params data/daps_experiments/tpcc_2x_latency_tier_params.csv \
-    --tier-daps data/daps_experiments/baseline/tier_daps.csv \
-    --tier-deps data/daps_experiments/2lru/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_latency_slas.csv \
-    --tenant-dmps data/daps_experiments/baseline/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/2lru/logs/tpcc_2x_latency.log \
-    --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/2lru/results/tpcc_2x_latency.csv </dev/null &>/dev/null &
-```
-
-## PMem Endurance Experiments
-
-### Baseline
-
-#### 1x Resources
-```
-$ python3 cpbpsim/bp_simulator.py \
-    --workers 100 \
-    --tier-params data/daps_experiments/tpcc_1x_endurance_tier_params.csv \
-    --tier-daps data/daps_experiments/baseline/tier_daps.csv \
-    --tier-deps data/daps_experiments/baseline/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_endurance_slas.csv \
-    --tenant-dmps data/daps_experiments/baseline/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/baseline/logs/tpcc_1x_endurance.log \
-    --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/baseline/results/tpcc_1x_endurance.csv </dev/null &>/dev/null &
-```
-
-#### 2x Resources
-```
-$ python3 cpbpsim/bp_simulator.py \
-    --workers 100 \
-    --tier-params data/daps_experiments/tpcc_2x_endurance_tier_params.csv \
-    --tier-daps data/daps_experiments/baseline/tier_daps.csv \
-    --tier-deps data/daps_experiments/baseline/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_endurance_slas.csv \
-    --tenant-dmps data/daps_experiments/baseline/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/baseline/logs/tpcc_2x_endurance.log \
-    --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/baseline/results/tpcc_2x_endurance.csv </dev/null &>/dev/null &
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/baseline/results/tpcc_16x_latency.csv </dev/null &>/dev/null &
 ```
 
 ### 2LRU
@@ -169,34 +100,182 @@ $ python3 cpbpsim/bp_simulator.py \
 ```
 $ python3 cpbpsim/bp_simulator.py \
     --workers 100 \
-    --tier-params data/daps_experiments/tpcc_1x_endurance_tier_params.csv \
-    --tier-daps data/daps_experiments/baseline/tier_daps.csv \
-    --tier-deps data/daps_experiments/2lru/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_endurance_slas.csv \
-    --tenant-dmps data/daps_experiments/baseline/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/2lru/logs/tpcc_1x_endurance.log \
+    --tier-params data/dapd_experiments/tpcc_1x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/baseline/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru/logs/tpcc_1x_latency.log \
     --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/2lru/results/tpcc_1x_endurance.csv </dev/null &>/dev/null &
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru/results/tpcc_1x_latency.csv </dev/null &>/dev/null &
 ```
 
 #### 2x Resources
 ```
 $ python3 cpbpsim/bp_simulator.py \
     --workers 100 \
-    --tier-params data/daps_experiments/tpcc_2x_endurance_tier_params.csv \
-    --tier-daps data/daps_experiments/baseline/tier_daps.csv \
-    --tier-deps data/daps_experiments/2lru/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_endurance_slas.csv \
-    --tenant-dmps data/daps_experiments/baseline/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/2lru/logs/tpcc_2x_endurance.log \
+    --tier-params data/dapd_experiments/tpcc_2x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/baseline/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru/logs/tpcc_2x_latency.log \
     --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/2lru/results/tpcc_2x_endurance.csv </dev/null &>/dev/null &
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru/results/tpcc_2x_latency.csv </dev/null &>/dev/null &
+```
+
+#### 4x Resources
+```
+$ python3 cpbpsim/bp_simulator.py \
+    --workers 100 \
+    --tier-params data/dapd_experiments/tpcc_4x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/baseline/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru/logs/tpcc_4x_latency.log \
+    --log-level INFO \
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru/results/tpcc_4x_latency.csv </dev/null &>/dev/null &
+```
+
+#### 8x Resources
+```
+$ python3 cpbpsim/bp_simulator.py \
+    --workers 100 \
+    --tier-params data/dapd_experiments/tpcc_8x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/baseline/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru/logs/tpcc_8x_latency.log \
+    --log-level INFO \
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru/results/tpcc_8x_latency.csv </dev/null &>/dev/null &
+```
+
+#### 16x Resources
+```
+$ python3 cpbpsim/bp_simulator.py \
+    --workers 100 \
+    --tier-params data/dapd_experiments/tpcc_16x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/baseline/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru/logs/tpcc_16x_latency.log \
+    --log-level INFO \
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru/results/tpcc_16x_latency.csv </dev/null &>/dev/null &
+```
+
+### 2LRU-2Q
+
+#### 1x Resources
+```
+$ python3 cpbpsim/bp_simulator.py \
+    --workers 100 \
+    --tier-params data/dapd_experiments/tpcc_1x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/2lru-2q/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru-2q/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru-2q/logs/tpcc_1x_latency.log \
+    --log-level INFO \
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru-2q/results/tpcc_1x_latency.csv </dev/null &>/dev/null &
+```
+
+#### 2x Resources
+```
+$ python3 cpbpsim/bp_simulator.py \
+    --workers 100 \
+    --tier-params data/dapd_experiments/tpcc_2x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/2lru-2q/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru-2q/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru-2q/logs/tpcc_2x_latency.log \
+    --log-level INFO \
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru-2q/results/tpcc_2x_latency.csv </dev/null &>/dev/null &
+```
+
+#### 4x Resources
+```
+$ python3 cpbpsim/bp_simulator.py \
+    --workers 100 \
+    --tier-params data/dapd_experiments/tpcc_4x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/2lru-2q/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru-2q/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru-2q/logs/tpcc_4x_latency.log \
+    --log-level INFO \
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru-2q/results/tpcc_4x_latency.csv </dev/null &>/dev/null &
+```
+
+#### 8x Resources
+```
+$ python3 cpbpsim/bp_simulator.py \
+    --workers 100 \
+    --tier-params data/dapd_experiments/tpcc_8x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/2lru-2q/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru-2q/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru-2q/logs/tpcc_8x_latency.log \
+    --log-level INFO \
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru-2q/results/tpcc_8x_latency.csv </dev/null &>/dev/null &
+```
+
+#### 16x Resources
+```
+$ python3 cpbpsim/bp_simulator.py \
+    --workers 100 \
+    --tier-params data/dapd_experiments/tpcc_16x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/2lru-2q/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru-2q/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/baseline/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru-2q/logs/tpcc_16x_latency.log \
+    --log-level INFO \
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru-2q/results/tpcc_16x_latency.csv </dev/null &>/dev/null &
 ```
 
 ### 2LRU-2Q-HDMP
@@ -205,32 +284,92 @@ $ python3 cpbpsim/bp_simulator.py \
 ```
 $ python3 cpbpsim/bp_simulator.py \
     --workers 100 \
-    --tier-params data/daps_experiments/tpcc_1x_endurance_tier_params.csv \
-    --tier-daps data/daps_experiments/2lru-2q-hdmp/tier_daps.csv \
-    --tier-deps data/daps_experiments/2lru-2q-hdmp/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_endurance_slas.csv \
-    --tenant-dmps data/daps_experiments/2lru-2q-hdmp/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/2lru-2q-hdmp/logs/tpcc_1x_endurance.log \
+    --tier-params data/dapd_experiments/tpcc_1x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/2lru-2q-hdmp/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru-2q-hdmp/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/2lru-2q-hdmp/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru-2q-hdmp/logs/tpcc_1x_latency.log \
     --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/2lru-2q-hdmp/results/tpcc_1x_endurance.csv </dev/null &>/dev/null &
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru-2q-hdmp/results/tpcc_1x_latency.csv </dev/null &>/dev/null &
 ```
 
 #### 2x Resources
 ```
 $ python3 cpbpsim/bp_simulator.py \
     --workers 100 \
-    --tier-params data/daps_experiments/tpcc_2x_endurance_tier_params.csv \
-    --tier-daps data/daps_experiments/2lru-2q-hdmp/tier_daps.csv \
-    --tier-deps data/daps_experiments/2lru-2q-hdmp/tier_deps.csv \
-    --tenant-slas data/daps_experiments/tpcc_tenant_endurance_slas.csv \
-    --tenant-dmps data/daps_experiments/2lru-2q-hdmp/tenant_dmps.csv \
-    --byte-addressability data/daps_experiments/byte_addressability.csv \
-    --pas-file ../../tempfs/3hr_12st_16ten_v3_pas.csv \
-    --log-file data/daps_experiments/2lru-2q-hdmp/logs/tpcc_2x_endurance.log \
+    --tier-params data/dapd_experiments/tpcc_2x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/2lru-2q-hdmp/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru-2q-hdmp/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/2lru-2q-hdmp/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru-2q-hdmp/logs/tpcc_2x_latency.log \
     --log-level INFO \
-    --warmup 900000 \
-    --output-file data/daps_experiments/2lru-2q-hdmp/results/tpcc_2x_endurance.csv </dev/null &>/dev/null &
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru-2q-hdmp/results/tpcc_2x_latency.csv </dev/null &>/dev/null &
 ```
+
+#### 4x Resources
+```
+$ python3 cpbpsim/bp_simulator.py \
+    --workers 100 \
+    --tier-params data/dapd_experiments/tpcc_4x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/2lru-2q-hdmp/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru-2q-hdmp/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/2lru-2q-hdmp/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru-2q-hdmp/logs/tpcc_4x_latency.log \
+    --log-level INFO \
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru-2q-hdmp/results/tpcc_4x_latency.csv </dev/null &>/dev/null &
+```
+
+#### 8x Resources
+```
+$ python3 cpbpsim/bp_simulator.py \
+    --workers 100 \
+    --tier-params data/dapd_experiments/tpcc_8x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/2lru-2q-hdmp/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru-2q-hdmp/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/2lru-2q-hdmp/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru-2q-hdmp/logs/tpcc_8x_latency.log \
+    --log-level INFO \
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru-2q-hdmp/results/tpcc_8x_latency.csv </dev/null &>/dev/null &
+```
+
+#### 16x Resources
+```
+$ python3 cpbpsim/bp_simulator.py \
+    --workers 100 \
+    --tier-params data/dapd_experiments/tpcc_16x_latency_tier_params.csv \
+    --tier-daps data/dapd_experiments/2lru-2q-hdmp/tier_daps.csv \
+    --tier-deps data/dapd_experiments/2lru-2q-hdmp/tier_deps.csv \
+    --tenant-slas data/dapd_experiments/tpcc_tenant_latency_slas.csv \
+    --tenant-dmps data/dapd_experiments/2lru-2q-hdmp/tenant_dmps.csv \
+    --byte-addressability data/dapd_experiments/byte_addressability.csv \
+    --pas-file ../../tempfs/1hr_1st_16ten_v3_pas.csv \
+    --log-file data/dapd_experiments/2lru-2q-hdmp/logs/tpcc_16x_latency.log \
+    --log-level INFO \
+    --warmup 60000 \
+    --to-time 600000 \
+    --output-file data/dapd_experiments/2lru-2q-hdmp/results/tpcc_16x_latency.csv </dev/null &>/dev/null &
+```
+
+## PMem Endurance Experiments
+
+### Baseline
