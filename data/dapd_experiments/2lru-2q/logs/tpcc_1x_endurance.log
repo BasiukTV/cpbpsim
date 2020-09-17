@@ -1,0 +1,14 @@
+2020-09-17 16:42:17,151:__main__:INFO: Instantiating the Buffer Pool Simulator.
+2020-09-17 16:46:52,996:__main__:INFO: Starting to validate the simulation input data.
+2020-09-17 16:47:37,687:__main__:INFO: Starting the simulation. Number of requests to process: 115773241
+2020-09-17 16:49:16,437:__main__:INFO: Processed 5788663 requests. Or at least: 5%
+2020-09-17 16:50:41,305:__main__:INFO: Processed 11577325 requests. Or at least: 10%
+2020-09-17 16:52:26,687:__main__:INFO: Processed 17365987 requests. Or at least: 15%
+2020-09-17 16:54:12,540:__main__:INFO: Processed 23154649 requests. Or at least: 20%
+2020-09-17 16:55:59,024:__main__:INFO: Processed 28943311 requests. Or at least: 25%
+2020-09-17 16:57:45,745:__main__:INFO: Processed 34731973 requests. Or at least: 30%
+2020-09-17 16:59:32,993:__main__:INFO: Processed 40520635 requests. Or at least: 35%
+2020-09-17 17:01:19,971:__main__:INFO: Processed 46309297 requests. Or at least: 40%
+2020-09-17 17:03:07,679:__main__:INFO: Processed 52097959 requests. Or at least: 44%
+2020-09-17 17:04:55,273:__main__:INFO: Processed 57886621 requests. Or at least: 49%
+2020-09-17 17:06:42,446:__main__:INFO: Processed 63675283 requests. Or at least: 54%
